@@ -23,7 +23,9 @@ class RealtimeHub {
       };
     }
 
-    if (isSupabaseConfigured && supabase) {
+    const proc = (globalThis as unknown as { process?: { env?: Record<string, string> } }).process;
+    const isTest = Boolean(proc?.env?.NODE_ENV === 'test' || proc?.env?.VITEST);
+    if (!isTest && typeof window !== 'undefined' && isSupabaseConfigured && supabase) {
       // Connect to Supabase Realtime channel
       const channel = supabase.channel('public:orders');
       channel

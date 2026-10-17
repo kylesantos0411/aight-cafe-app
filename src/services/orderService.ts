@@ -61,16 +61,23 @@ class OrderRepository {
     const { subtotal, totalAmount, verifiedItems } = calculateAuthoritativeOrderTotal(items, menuCatalog);
 
     // 2. Generate unguessable private token and short request reference
-    const privateToken = typeof crypto !== 'undefined' && crypto.randomUUID
+    const generateUUID = () => (typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
-      : 'token_' + Math.random().toString(36).substring(2) + Date.now();
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+          const r = (Math.random() * 16) | 0;
+          const v = c === 'x' ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        }));
+
+    const privateToken = generateUUID();
+    const orderId = generateUUID();
     
     // Request reference e.g. "R-8F2"
     const hex = Math.floor(Math.random() * 0xFFF).toString(16).toUpperCase().padStart(3, '0');
     const requestReference = `R-${hex}`;
 
     const newOrder: Order = {
-      id: 'ord_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: orderId,
       requestReference,
       code: requestReference, // Initially shows request reference until staff accepts
       queueNumber: null,      // Queue number assigned ONLY upon staff acceptance
@@ -92,13 +99,14 @@ class OrderRepository {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data: insertedOrder, error: orderError } = await supabase
+        const { error: orderError } = await supabase
           .from('orders')
           .insert({
+            id: newOrder.id,
             request_reference: newOrder.requestReference,
             private_token: newOrder.privateToken,
             customer_name: newOrder.customerName,
-            customer_id: newOrder.customerId,
+            customer_id: newOrder.customerId && /^[0-9a-f-]{36}$/i.test(newOrder.customerId) ? newOrder.customerId : null,
             phone: newOrder.phone,
             order_type: newOrder.orderType,
             payment_method: 'cash_at_pickup',
@@ -106,41 +114,35 @@ class OrderRepository {
             status: 'pending',
             subtotal: newOrder.subtotal,
             total_amount: newOrder.totalAmount,
-            estimated_minutes: newOrder.estimatedMinutes,
             notes: newOrder.notes,
-          })
-          .select()
-          .single();
+          });
 
         if (orderError) throw orderError;
-        if (insertedOrder) {
-          newOrder.id = insertedOrder.id;
 
-          // Insert order items
-          for (const it of verifiedItems) {
-            const { data: insertedItem, error: itemError } = await supabase
-              .from('order_items')
-              .insert({
-                order_id: insertedOrder.id,
-                product_id: it.menuItemId.length === 36 ? it.menuItemId : null,
-                product_name: it.name,
-                base_price: it.basePrice || it.price,
-                quantity: it.quantity,
-                subtotal: it.price * it.quantity,
-                notes: it.notes,
-              })
-              .select()
-              .single();
+        // Insert order items
+        for (const it of verifiedItems) {
+          const itemId = generateUUID();
+          const { error: itemError } = await supabase
+            .from('order_items')
+            .insert({
+              id: itemId,
+              order_id: newOrder.id,
+              product_id: it.menuItemId && /^[0-9a-f-]{36}$/i.test(it.menuItemId) ? it.menuItemId : null,
+              product_name: it.name,
+              unit_price: it.price,
+              quantity: it.quantity,
+              item_total: it.price * it.quantity,
+              customization_summary: it.notes || (it.customizations ? it.customizations.map(c => `${c.groupName}: ${c.itemName}`).join(', ') : null),
+            });
 
-            if (!itemError && insertedItem && it.customizations) {
-              for (const cust of it.customizations) {
-                await supabase.from('order_item_customizations').insert({
-                  order_item_id: insertedItem.id,
-                  option_group_name: cust.groupName,
-                  option_item_name: cust.itemName,
-                  additional_price: cust.additionalPrice,
-                });
-              }
+          if (!itemError && it.customizations) {
+            for (const cust of it.customizations) {
+              await supabase.from('order_item_customizations').insert({
+                order_item_id: itemId,
+                group_name: cust.groupName,
+                option_name: cust.itemName,
+                price_delta: cust.additionalPrice,
+              });
             }
           }
         }
@@ -174,7 +176,7 @@ class OrderRepository {
 
     let queueNumber = this.getNextQueueNumber();
 
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id) && /^[0-9a-f-]{36}$/i.test(staffId)) {
       try {
         const { data: rpcRes, error } = await supabase.rpc('fn_accept_order', {
           p_order_id: order.id,
@@ -221,7 +223,7 @@ class OrderRepository {
       paymentStatus: 'verified',
     };
 
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id) && /^[0-9a-f-]{36}$/i.test(staffId)) {
       try {
         await supabase.rpc('fn_verify_cash_payment', {
           p_order_id: order.id,
@@ -269,7 +271,7 @@ class OrderRepository {
       completedAt: nextStatus === 'completed' ? new Date().toISOString() : order.completedAt,
     };
 
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id) && /^[0-9a-f-]{36}$/i.test(staffId)) {
       try {
         await supabase.rpc('fn_update_order_status', {
           p_order_id: order.id,
@@ -292,28 +294,11 @@ class OrderRepository {
    * Fetch customer order using unguessable private token (UUID).
    */
   public async getOrderByPrivateToken(token: string): Promise<Order | null> {
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(token)) {
       try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select(`
-            *,
-            order_items (
-              id,
-              product_name,
-              base_price,
-              quantity,
-              subtotal,
-              notes,
-              order_item_customizations (
-                option_group_name,
-                option_item_name,
-                additional_price
-              )
-            )
-          `)
-          .eq('private_token', token)
-          .single();
+        const { data, error } = await supabase.rpc('fn_get_order_by_token', {
+          p_private_token: token,
+        });
 
         if (!error && data) {
           return {
@@ -325,15 +310,16 @@ class OrderRepository {
             customerId: data.customer_id,
             customerName: data.customer_name,
             phone: data.phone,
-            orderType: data.order_type,
-            items: data.order_items.map((it: any) => ({
+            orderType: data.order_type || 'takeout',
+            items: (data.items || []).map((it: any) => ({
               id: it.id,
-              menuItemId: it.product_id || '1',
+              menuItemId: '1',
               name: it.product_name,
-              price: parseFloat(it.subtotal) / it.quantity,
-              basePrice: parseFloat(it.base_price),
+              price: parseFloat(it.unit_price),
+              basePrice: parseFloat(it.unit_price),
               quantity: it.quantity,
               image: '/figma-assets/iced-latte.jpg',
+              notes: it.customization_summary,
             })),
             subtotal: parseFloat(data.subtotal),
             totalAmount: parseFloat(data.total_amount),
@@ -343,7 +329,7 @@ class OrderRepository {
             createdAt: data.created_at,
             acceptedAt: data.accepted_at,
             completedAt: data.completed_at,
-            estimatedMinutes: data.estimated_minutes,
+            estimatedMinutes: 10,
             cancellationReason: data.cancellation_reason,
             notes: data.notes,
           };
@@ -447,7 +433,9 @@ class OrderRepository {
               });
             });
           }
-          return list;
+          if (list.length > 0) {
+            return list;
+          }
         }
       } catch (err) {
         console.warn('Supabase fn_get_public_queue error:', err);
