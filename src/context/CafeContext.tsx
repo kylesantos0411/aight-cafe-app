@@ -51,7 +51,7 @@ interface CafeContextType {
 
   // Staff State
   isStaffLoggedIn: boolean;
-  loginStaff: (pinOrPass: string) => Promise<boolean>;
+  loginStaff: (emailOrPass: string, pass?: string) => Promise<boolean>;
   logoutStaff: () => Promise<void>;
 
   // Offline / Network
@@ -278,9 +278,11 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return updated;
   };
 
-  const loginStaff = async (pinOrPass: string): Promise<boolean> => {
+  const loginStaff = async (emailOrPass: string, pass?: string): Promise<boolean> => {
     try {
-      await authService.signInStaff(pinOrPass);
+      const email = pass ? emailOrPass : 'mia@aight.cafe';
+      const password = pass ? pass : emailOrPass;
+      await authService.signInStaff(email, password);
       setIsStaffLoggedIn(true);
       return true;
     } catch {

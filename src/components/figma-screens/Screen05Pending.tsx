@@ -6,7 +6,7 @@ interface Props {
 }
 
 export const Screen05Pending: React.FC<Props> = ({ onSimulateAccept }) => {
-  const { activeOrder, acceptOrder } = useCafe();
+  const { activeOrder } = useCafe();
 
   const requestRef = activeOrder?.requestReference || 'R-8F2';
   const orderTotal = activeOrder?.totalAmount || 265;
@@ -36,17 +36,6 @@ export const Screen05Pending: React.FC<Props> = ({ onSimulateAccept }) => {
       onSimulateAccept();
     }
   }, [activeOrder?.status, onSimulateAccept]);
-
-  const handleSimulate = async () => {
-    if (activeOrder && activeOrder.status === 'pending') {
-      try {
-        await acceptOrder(activeOrder.id);
-      } catch {
-        // ignore
-      }
-    }
-    if (onSimulateAccept) onSimulateAccept();
-  };
 
   return (
     <div className="w-[390px] min-h-[960px] bg-[#FAF8F5] text-[#221611] rounded-[44px] p-6 flex flex-col shadow-2xl border border-[#EAE3DA] font-sans relative overflow-hidden select-none">
@@ -154,15 +143,12 @@ export const Screen05Pending: React.FC<Props> = ({ onSimulateAccept }) => {
         </div>
       </div>
 
-      {/* Bottom Action Button */}
+      {/* Bottom Status Badge */}
       <div className="mt-auto pt-4 space-y-2">
-        <button
-          onClick={handleSimulate}
-          className="w-full py-3.5 px-6 bg-[#221611] hover:bg-[#3D2D23] text-[#FAF8F5] rounded-2xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-black/10"
-        >
+        <div className="w-full py-3.5 px-6 bg-[#E8F0EA] text-[#246B3E] rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 border border-[#D2E7D7]">
           <span>✓</span>
-          <span>Simulate staff accept (Assign queue)</span>
-        </button>
+          <span>Order submitted</span>
+        </div>
         <p className="text-[10px] text-center text-[#8C7A6D]">
           Keep this private page open. No payment has been taken.
         </p>
