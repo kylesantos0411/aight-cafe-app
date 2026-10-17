@@ -40,15 +40,20 @@ export const CustomerOrderTrackerView: React.FC = () => {
     fetchOrder();
 
     // Subscribe to realtime updates for this order
-    const unsubscribe = realtimeHub.subscribeToOrders((updatedOrder) => {
+    const unsubscribeOrders = realtimeHub.subscribeToOrders((updatedOrder) => {
       if (updatedOrder.privateToken === token || updatedOrder.id === order?.id) {
         setOrder(updatedOrder);
         setActiveOrder(updatedOrder);
       }
     });
 
+    const unsubscribeQueue = realtimeHub.subscribeToQueue(() => {
+      fetchOrder();
+    });
+
     return () => {
-      unsubscribe();
+      unsubscribeOrders();
+      unsubscribeQueue();
     };
   }, [fetchOrder, token, order?.id, setActiveOrder]);
 

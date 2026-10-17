@@ -72,8 +72,8 @@ class OrderRepository {
     const privateToken = generateUUID();
     const orderId = generateUUID();
     
-    // Request reference e.g. "R-8F2"
-    const hex = Math.floor(Math.random() * 0xFFF).toString(16).toUpperCase().padStart(3, '0');
+    // Request reference e.g. "R-8F2B"
+    const hex = Math.floor(0x1000 + Math.random() * 0xEFFF).toString(16).toUpperCase();
     const requestReference = `R-${hex}`;
 
     const newOrder: Order = {
@@ -356,10 +356,10 @@ class OrderRepository {
             order_items (
               id,
               product_name,
-              base_price,
+              unit_price,
               quantity,
-              subtotal,
-              notes
+              item_total,
+              customization_summary
             )
           `)
           .order('created_at', { ascending: false });
@@ -375,14 +375,15 @@ class OrderRepository {
             customerName: d.customer_name,
             phone: d.phone,
             orderType: d.order_type,
-            items: d.order_items.map((it: any) => ({
+            items: (d.order_items || []).map((it: any) => ({
               id: it.id,
               menuItemId: '1',
               name: it.product_name,
-              price: parseFloat(it.subtotal) / it.quantity,
-              basePrice: parseFloat(it.base_price),
+              price: parseFloat(it.unit_price),
+              basePrice: parseFloat(it.unit_price),
               quantity: it.quantity,
               image: '/figma-assets/iced-latte.jpg',
+              notes: it.customization_summary,
             })),
             subtotal: parseFloat(d.subtotal),
             totalAmount: parseFloat(d.total_amount),

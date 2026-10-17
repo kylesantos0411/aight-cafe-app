@@ -110,7 +110,7 @@ describe('Aight Cafe - Core Business & Security Logic', () => {
       });
 
       expect(order.status).toBe('pending');
-      expect(order.requestReference).toMatch(/^R-[0-9A-F]{3}$/);
+      expect(order.requestReference).toMatch(/^R-[0-9A-F]{4}$/);
       expect(order.queueNumber).toBeNull();
       expect(order.privateToken).toBeDefined();
       expect(order.privateToken.length).toBeGreaterThan(10);
@@ -137,6 +137,49 @@ describe('Aight Cafe - Core Business & Security Logic', () => {
       expect(accepted.status).toBe('confirmed');
       expect(accepted.queueNumber).toMatch(/^A\d{3}$/);
       expect(accepted.code).toBe(accepted.queueNumber);
+    });
+
+    it('rejects processing an already processed order', async () => {
+      const cartItems: CartItem[] = [
+        {
+          id: 'c1',
+          menuItemId: '1',
+          name: 'Iced latte',
+          price: 180,
+          quantity: 1,
+          image: '/figma-assets/iced-latte.jpg',
+        },
+      ];
+
+      const order = await orderService.createOrder(cartItems, { customerName: 'Alex' });
+      const accepted = await orderService.acceptOrder(order.id);
+      expect(accepted.status).toBe('confirmed');
+
+      // Attempting to accept a second time throws error
+      await expect(orderService.acceptOrder(order.id)).rejects.toThrow(/already been processed/i);
+    });
+
+    it('retrieves order by private token without leaking full table', async () => {
+      const cartItems: CartItem[] = [
+        {
+          id: 'c1',
+          menuItemId: '1',
+          name: 'Iced latte',
+          price: 180,
+          quantity: 1,
+          image: '/figma-assets/iced-latte.jpg',
+        },
+      ];
+
+      const order = await orderService.createOrder(cartItems, { customerName: 'Alex' });
+      const found = await orderService.getOrderByPrivateToken(order.privateToken);
+      expect(found).not.toBeNull();
+      expect(found?.id).toBe(order.id);
+      expect(found?.totalAmount).toBe(order.totalAmount);
+
+      // Random non-existent token returns null
+      const notFound = await orderService.getOrderByPrivateToken('00000000-0000-0000-0000-000000000000');
+      expect(notFound).toBeNull();
     });
   });
 
