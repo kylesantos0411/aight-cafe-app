@@ -54,7 +54,7 @@ export const CustomerOrderTrackerView: React.FC = () => {
 
   if (isOffline) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-start p-4 md:p-8 font-sans">
+      <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 font-sans">
         <Screen11ConnectionLost onRetry={fetchOrder} />
       </div>
     );
@@ -62,7 +62,7 @@ export const CustomerOrderTrackerView: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-6 text-xs text-[#8C7A6D]">
+      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center p-6 text-sm text-[#8C7A6D]">
         Retrieving order status...
       </div>
     );
@@ -70,15 +70,15 @@ export const CustomerOrderTrackerView: React.FC = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-center p-6 text-center space-y-3 font-sans">
-        <div className="text-3xl">🔍</div>
-        <h2 className="text-base font-bold text-[#221611]">Order not found</h2>
-        <p className="text-xs text-[#7A695C] max-w-xs">
+      <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center p-6 text-center space-y-4 font-sans">
+        <div className="text-4xl">🔍</div>
+        <h2 className="text-lg font-bold text-[#221611]">Order not found</h2>
+        <p className="text-sm text-[#7A695C] max-w-xs">
           This order link may be expired or invalid. Please check your link or place a new order.
         </p>
         <button
           onClick={() => navigate('/')}
-          className="mt-2 px-5 py-2.5 bg-[#221611] text-white rounded-xl text-xs font-bold"
+          className="mt-2 px-6 py-3 bg-[#221611] text-white rounded-xl text-xs font-bold hover:bg-[#36251E] cursor-pointer"
         >
           Return to Menu
         </button>
@@ -87,7 +87,7 @@ export const CustomerOrderTrackerView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-start p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 font-sans">
       {order.status === 'pending' && <Screen05Pending />}
       {order.status === 'confirmed' && <Screen06Confirmed />}
       {order.status === 'preparing' && <Screen07Preparing />}

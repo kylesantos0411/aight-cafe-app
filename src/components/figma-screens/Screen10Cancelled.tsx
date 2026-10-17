@@ -6,25 +6,14 @@ interface Props {
 
 export const Screen10Cancelled: React.FC<Props> = ({ onBackToMenu }) => {
   return (
-    <div className="w-[390px] min-h-[960px] bg-[#FAF8F5] text-[#221611] rounded-[44px] p-6 flex flex-col shadow-2xl border border-[#EAE3DA] font-sans relative overflow-hidden select-none">
-      {/* Device Status Bar */}
-      <div className="flex justify-between items-center text-[12px] font-semibold text-[#221611] pb-3 pt-1 px-2">
-        <span>9:35</span>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px]">●●●</span>
-          <div className="w-4 h-2.5 border border-current rounded-xs flex items-center p-0.5">
-            <div className="w-full h-full bg-current rounded-2xs"></div>
-          </div>
-        </div>
-      </div>
-
+    <div className="w-full max-w-xl mx-auto bg-[#FAF8F5] text-[#221611] rounded-3xl p-6 sm:p-8 flex flex-col shadow-xs border border-[#EAE3DA] font-sans relative select-none">
       {/* Top Header */}
-      <div className="flex items-center justify-between pb-3 pt-1">
-        <button onClick={onBackToMenu} className="text-lg font-bold text-[#221611] p-1 -ml-1">
-          ←
+      <div className="flex items-center justify-between pb-4 border-b border-[#ECE5DC]">
+        <button onClick={onBackToMenu} className="text-sm font-bold text-[#221611] p-1 -ml-1 cursor-pointer hover:text-[#5C4A3E]">
+          ← Back to menu
         </button>
         <span className="font-bold text-sm text-[#221611]">Order details</span>
-        <span className="text-sm font-bold text-[#8C7A6D]">···</span>
+        <span className="text-xs font-semibold text-[#8C7A6D]">Aight Cafe</span>
       </div>
 
       {/* Cancelled Pill */}
@@ -100,18 +89,13 @@ export const Screen10Cancelled: React.FC<Props> = ({ onBackToMenu }) => {
       </p>
 
       {/* Bottom Sticky Button */}
-      <div className="mt-auto pt-4">
+      <div className="mt-8 pt-4">
         <button
           onClick={onBackToMenu}
-          className="w-full py-3.5 px-6 bg-[#523E32] hover:bg-[#3D2D23] text-[#FAF8F5] rounded-2xl font-bold text-xs transition-colors flex items-center justify-center shadow-lg shadow-black/10"
+          className="w-full py-4 px-6 bg-[#221611] hover:bg-[#36251E] text-[#FAF8F5] rounded-2xl font-bold text-xs transition-colors flex items-center justify-center shadow-lg cursor-pointer"
         >
           Back to the menu
         </button>
-      </div>
-
-      {/* Home indicator */}
-      <div className="h-4 flex items-center justify-center pt-2">
-        <div className="w-32 h-1 bg-[#221611]/30 rounded-full"></div>
       </div>
     </div>
   );

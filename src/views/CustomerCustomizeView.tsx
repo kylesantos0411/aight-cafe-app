@@ -1,68 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCafe } from '../context/CafeContext';
-import { menuService } from '../services/menuService';
+import { INITIAL_MENU_ITEMS } from '../data/mockMenu';
 import { calculateAuthoritativeItemPrice } from '../services/orderCalculator';
-import type { MenuItem } from '../types/cafe';
 
 export const CustomerCustomizeView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart } = useCafe();
+  const { addToCart, cartCount } = useCafe();
 
-  const [product, setProduct] = useState<MenuItem | null>(null);
-  const [size, setSize] = useState<string>('Large');
-  const [milk, setMilk] = useState<string>('Oat milk');
-  const [sweetness, setSweetness] = useState<string>('25%');
-  const [extraShot, setExtraShot] = useState(false);
-  const [quantity, setQuantity] = useState(1);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (id) {
-      menuService.getProductById(id).then(item => {
-        if (item) {
-          setProduct(item);
-          if (item.options?.sizes && item.options.sizes.length > 0) {
-            setSize(item.options.sizes[item.options.sizes.length - 1].name);
-          }
-          if (item.options?.milks && item.options.milks.length > 0) {
-            setMilk(item.options.milks[1]?.name || item.options.milks[0].name);
-          }
-        }
-        setLoading(false);
-      });
-    }
+  const product = useMemo(() => {
+    return INITIAL_MENU_ITEMS.find(m => m.id === id) || INITIAL_MENU_ITEMS[0];
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-6 text-xs text-[#8C7A6D]">
-        Loading item details...
-      </div>
-    );
-  }
+  const [size, setSize] = useState<string>(product.options?.sizes?.[0]?.name || 'Regular');
+  const [milk, setMilk] = useState<string>(product.options?.milks?.[0]?.name || 'Dairy');
+  const [sweetness, setSweetness] = useState<string>(product.options?.sweetness?.[1] || '25%');
+  const [extraShot, setExtraShot] = useState<boolean>(false);
+  const [quantity, setQuantity] = useState<number>(1);
 
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-center p-6 text-center space-y-3">
-        <p className="text-sm font-bold text-[#221611]">Item not found</p>
-        <button
-          onClick={() => navigate('/')}
-          className="px-4 py-2 bg-[#221611] text-white rounded-xl text-xs font-bold"
-        >
-          Return to Menu
-        </button>
-      </div>
-    );
-  }
-
-  const priceResult = calculateAuthoritativeItemPrice(product, {
-    size,
-    milk,
-    extraShot,
-    quantity,
-  });
+  // Authoritative real-time calculation
+  const priceResult = useMemo(() => {
+    return calculateAuthoritativeItemPrice(product, {
+      size,
+      milk,
+      sweetness,
+      extraShot,
+      quantity,
+    });
+  }, [product, size, milk, sweetness, extraShot, quantity]);
 
   const handleAddToCart = () => {
     addToCart({
@@ -81,77 +47,82 @@ export const CustomerCustomizeView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-start p-4 md:p-8 font-sans">
-      <div className="w-full max-w-[420px] min-h-[960px] bg-[#FAF8F5] text-[#221611] rounded-[44px] p-6 flex flex-col shadow-2xl border border-[#EAE3DA] relative overflow-hidden select-none">
-        {/* Device Status Bar */}
-        <div className="flex justify-between items-center text-[12px] font-semibold text-[#221611] pb-3 pt-1 px-2">
-          <span>9:40</span>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px]">●●●</span>
-            <div className="w-4 h-2.5 border border-current rounded-xs flex items-center p-0.5">
-              <div className="w-full h-full bg-current rounded-2xs"></div>
+    <div className="min-h-screen bg-[#FAF8F5] text-[#221611] font-sans flex flex-col selection:bg-[#221611] selection:text-[#FAF8F5]">
+      <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 md:px-8 py-5 md:py-8 flex-1 flex flex-col">
+        {/* Navigation Header */}
+        <header className="flex items-center justify-between pb-4 border-b border-[#ECE5DC]">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-sm font-bold text-[#221611] hover:text-[#5C4A3E] p-1 -ml-1 transition-colors cursor-pointer"
+          >
+            <span>←</span>
+            <span>Back to menu</span>
+          </button>
+          <span className="font-bold text-sm text-[#7A695C]">Customize your drink</span>
+          <button
+            onClick={() => navigate('/cart')}
+            className="w-8 h-8 rounded-full border border-[#DFD6CC] flex items-center justify-center text-[#5C4A3E] relative hover:bg-[#F2EDE4] transition-all"
+            title="Cart"
+          >
+            <span className="text-sm">👜</span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#221611] text-white text-[9px] font-bold flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
+          </button>
+        </header>
+
+        {/* Hero Card with Image & Details */}
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-5 items-center bg-white p-4 sm:p-5 rounded-3xl border border-[#ECE5DC] shadow-xs">
+          <div className="w-full h-48 sm:h-52 rounded-2xl overflow-hidden bg-[#EAE3DA]">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          <div className="flex flex-col justify-between h-full">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#ECEAE3] text-[#7A695C] rounded-full text-[11px] font-semibold mb-2">
+                {product.category}
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-[#221611] tracking-tight">{product.name}</h1>
+              <p className="text-xs sm:text-sm text-[#7A695C] mt-2 leading-relaxed">
+                {product.description}
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-[#F2ECE3] flex items-baseline justify-between">
+              <span className="text-xs text-[#8C7A6D]">Base price</span>
+              <span className="text-xl font-black text-[#221611]">₱{product.price}</span>
             </div>
           </div>
         </div>
 
-        {/* Top Header */}
-        <div className="flex items-center justify-between pb-3 pt-1">
-          <button
-            onClick={() => navigate('/')}
-            className="text-lg font-bold text-[#221611] p-1 -ml-1 hover:text-[#5C4A3E]"
-          >
-            ←
-          </button>
-          <span className="font-bold text-sm text-[#221611]">Make it yours</span>
-          <span className="text-sm font-bold text-[#8C7A6D]">···</span>
-        </div>
-
-        {/* Hero Image */}
-        <div className="w-full h-56 rounded-3xl overflow-hidden bg-[#EAE3DA] mt-2 shadow-xs">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        {/* Title & Price */}
-        <div className="mt-4 flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-black text-[#221611]">{product.name}</h1>
-            <p className="text-xs text-[#7A695C] mt-1 leading-relaxed max-w-[240px]">
-              {product.description}
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-xs text-[#8C7A6D]">From</div>
-            <div className="text-xl font-black text-[#221611]">₱{product.price}</div>
-          </div>
-        </div>
-
         {/* Customization Options */}
-        <div className="mt-4 space-y-4 text-xs">
+        <div className="mt-6 space-y-5 text-xs sm:text-sm">
           {/* Size */}
           {product.options?.sizes && product.options.sizes.length > 0 && (
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="font-bold text-[#221611]">Size</label>
-                <span className="text-[10px] text-[#8C7A6D]">Required</span>
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#ECE5DC]">
+              <div className="flex justify-between items-center mb-3">
+                <label className="font-bold text-sm text-[#221611]">Size</label>
+                <span className="text-[11px] font-semibold text-[#8C7A6D]">Required</span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 {product.options.sizes.map(s => (
                   <button
                     key={s.name}
                     type="button"
                     onClick={() => setSize(s.name)}
-                    className={`p-2.5 rounded-xl border flex items-center justify-between text-left transition-all ${
+                    className={`p-3 rounded-xl border flex items-center justify-between text-left transition-all cursor-pointer ${
                       size === s.name
-                        ? 'border-[#221611] bg-[#F2EDE4] font-bold text-[#221611]'
-                        : 'border-[#E0D7CC] bg-white text-[#5C4A3E]'
+                        ? 'border-[#221611] bg-[#F2EDE4] font-bold text-[#221611] ring-1 ring-[#221611]'
+                        : 'border-[#E0D7CC] bg-[#FAF8F5] hover:bg-white text-[#5C4A3E]'
                     }`}
                   >
-                    <span>{s.name}</span>
-                    <span className="text-[11px] text-[#8C7A6D]">
+                    <span className="font-semibold">{s.name}</span>
+                    <span className="text-xs text-[#8C7A6D]">
                       {s.price === 0 ? 'Base' : `+₱${s.price}`}
                     </span>
                   </button>
@@ -162,25 +133,25 @@ export const CustomerCustomizeView: React.FC = () => {
 
           {/* Milk */}
           {product.options?.milks && product.options.milks.length > 0 && (
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="font-bold text-[#221611]">Milk</label>
-                <span className="text-[10px] text-[#8C7A6D]">Required</span>
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#ECE5DC]">
+              <div className="flex justify-between items-center mb-3">
+                <label className="font-bold text-sm text-[#221611]">Milk Option</label>
+                <span className="text-[11px] font-semibold text-[#8C7A6D]">Required</span>
               </div>
-              <div className="space-y-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {product.options.milks.map(m => (
                   <button
                     key={m.name}
                     type="button"
                     onClick={() => setMilk(m.name)}
-                    className={`w-full p-2.5 rounded-xl border flex items-center justify-between text-left transition-all ${
+                    className={`p-3 rounded-xl border flex items-center justify-between text-left transition-all cursor-pointer ${
                       milk === m.name
-                        ? 'border-[#221611] bg-[#F2EDE4] font-bold text-[#221611]'
-                        : 'border-[#E0D7CC] bg-white text-[#5C4A3E]'
+                        ? 'border-[#221611] bg-[#F2EDE4] font-bold text-[#221611] ring-1 ring-[#221611]'
+                        : 'border-[#E0D7CC] bg-[#FAF8F5] hover:bg-white text-[#5C4A3E]'
                     }`}
                   >
-                    <span>{m.name}</span>
-                    <span className="text-[11px] text-[#8C7A6D]">
+                    <span className="font-semibold">{m.name}</span>
+                    <span className="text-xs text-[#8C7A6D]">
                       {m.price === 0 ? 'Included' : `+₱${m.price}`}
                     </span>
                   </button>
@@ -191,21 +162,21 @@ export const CustomerCustomizeView: React.FC = () => {
 
           {/* Sweetness */}
           {product.options?.sweetness && product.options.sweetness.length > 0 && (
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="font-bold text-[#221611]">Sweetness</label>
-                <span className="text-[10px] text-[#8C7A6D]">Required</span>
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#ECE5DC]">
+              <div className="flex justify-between items-center mb-3">
+                <label className="font-bold text-sm text-[#221611]">Sweetness Level</label>
+                <span className="text-[11px] font-semibold text-[#8C7A6D]">Required</span>
               </div>
-              <div className="grid grid-cols-4 gap-1.5 text-center">
+              <div className="grid grid-cols-4 gap-2 text-center">
                 {product.options.sweetness.map(sw => (
                   <button
                     key={sw}
                     type="button"
                     onClick={() => setSweetness(sw)}
-                    className={`py-2 px-1 rounded-xl border text-[11px] font-semibold transition-all ${
+                    className={`py-3 px-2 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                       sweetness === sw
                         ? 'border-[#221611] bg-[#221611] text-white font-bold'
-                        : 'border-[#E0D7CC] bg-white text-[#5C4A3E]'
+                        : 'border-[#E0D7CC] bg-[#FAF8F5] hover:bg-white text-[#5C4A3E]'
                     }`}
                   >
                     {sw}
@@ -217,66 +188,61 @@ export const CustomerCustomizeView: React.FC = () => {
 
           {/* Add-ons */}
           {product.category === 'Coffee' && (
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="font-bold text-[#221611]">Add-ons</label>
-                <span className="text-[10px] text-[#8C7A6D]">Optional</span>
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#ECE5DC]">
+              <div className="flex justify-between items-center mb-3">
+                <label className="font-bold text-sm text-[#221611]">Add-ons</label>
+                <span className="text-[11px] font-semibold text-[#8C7A6D]">Optional</span>
               </div>
               <button
                 type="button"
                 onClick={() => setExtraShot(!extraShot)}
-                className={`w-full p-2.5 rounded-xl border flex items-center justify-between text-left transition-all ${
+                className={`w-full p-3 rounded-xl border flex items-center justify-between text-left transition-all cursor-pointer ${
                   extraShot
-                    ? 'border-[#221611] bg-[#F2EDE4] font-bold text-[#221611]'
-                    : 'border-[#E0D7CC] bg-white text-[#5C4A3E]'
+                    ? 'border-[#221611] bg-[#F2EDE4] font-bold text-[#221611] ring-1 ring-[#221611]'
+                    : 'border-[#E0D7CC] bg-[#FAF8F5] hover:bg-white text-[#5C4A3E]'
                 }`}
               >
-                <span>Extra espresso shot</span>
-                <span className="text-[11px] text-[#8C7A6D]">+₱30</span>
+                <span className="font-semibold">Extra espresso shot</span>
+                <span className="text-xs font-bold text-[#8C7A6D]">+₱30</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* Quantity */}
-        <div className="mt-4 flex items-center justify-between pt-2 border-t border-[#ECE5DC]">
-          <span className="text-xs font-bold text-[#221611]">Quantity</span>
-          <div className="flex items-center gap-3 border border-[#E0D7CC] rounded-xl px-3 py-1 bg-white">
+        {/* Quantity Selector */}
+        <div className="mt-6 bg-white p-4 sm:p-5 rounded-2xl border border-[#ECE5DC] flex items-center justify-between">
+          <div>
+            <span className="text-sm font-bold text-[#221611]">Quantity</span>
+            <div className="text-[11px] text-[#8C7A6D] mt-0.5">
+              {priceResult.details.join(' · ')}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 border border-[#E0D7CC] rounded-xl px-4 py-1.5 bg-[#FAF8F5]">
             <button
               onClick={() => setQuantity(q => Math.max(1, q - 1))}
-              className="text-xs font-bold text-[#7A695C] px-1 hover:text-[#221611]"
+              className="text-sm font-bold text-[#7A695C] px-2 hover:text-[#221611] cursor-pointer"
             >
               –
             </button>
-            <span className="text-xs font-bold w-4 text-center">{quantity}</span>
+            <span className="text-sm font-bold w-6 text-center">{quantity}</span>
             <button
               onClick={() => setQuantity(q => q + 1)}
-              className="text-xs font-bold text-[#7A695C] px-1 hover:text-[#221611]"
+              className="text-sm font-bold text-[#7A695C] px-2 hover:text-[#221611] cursor-pointer"
             >
               +
             </button>
           </div>
         </div>
 
-        {/* Price Breakdown */}
-        <div className="mt-3 text-center text-[11px] text-[#8C7A6D]">
-          {priceResult.details.join(' ')} = ₱{priceResult.unitPrice}
-        </div>
-
         {/* Bottom Add to Cart Button */}
-        <div className="mt-auto pt-4">
+        <div className="sticky bottom-6 mt-8 z-20">
           <button
             onClick={handleAddToCart}
-            className="w-full py-3.5 px-6 bg-[#523E32] hover:bg-[#3D2D23] text-[#FAF8F5] rounded-2xl font-bold text-xs transition-transform active:scale-[0.99] flex items-center justify-between shadow-lg shadow-black/10"
+            className="w-full py-4 px-6 bg-[#221611] hover:bg-[#36251E] text-[#FAF8F5] rounded-2xl font-bold text-sm transition-transform active:scale-[0.99] flex items-center justify-between shadow-xl cursor-pointer"
           >
-            <span>Add to cart</span>
-            <span>₱{priceResult.totalPrice}</span>
+            <span>Add to Cart ({quantity})</span>
+            <span className="font-extrabold text-base">₱{priceResult.totalPrice}</span>
           </button>
-        </div>
-
-        {/* Home indicator */}
-        <div className="h-4 flex items-center justify-center pt-2">
-          <div className="w-32 h-1 bg-[#221611]/30 rounded-full"></div>
         </div>
       </div>
     </div>

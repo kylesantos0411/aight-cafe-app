@@ -29,8 +29,8 @@ export const StaffLoginView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-center p-4 md:p-8 font-sans">
-      <div className="w-full max-w-[480px] min-h-[840px] bg-[#FAF8F5] text-[#221611] rounded-[44px] p-10 flex flex-col justify-between shadow-2xl border border-[#EAE3DA] relative select-none">
+    <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 font-sans">
+      <div className="w-full max-w-md bg-[#FAF8F5] text-[#221611] rounded-3xl sm:rounded-[36px] p-6 sm:p-8 flex flex-col justify-between shadow-xl border border-[#EAE3DA] relative select-none">
         {/* Top Header */}
         <div>
           <div className="flex items-center justify-between pb-6 border-b border-[#ECE5DC]">

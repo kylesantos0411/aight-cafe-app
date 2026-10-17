@@ -70,10 +70,10 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
   };
 
   return (
-    <div className="w-[1440px] min-h-[1144px] bg-[#FAF8F5] text-[#221611] rounded-[44px] flex shadow-2xl border border-[#EAE3DA] font-sans relative overflow-hidden select-none">
-      {/* Left Sidebar (180px) */}
-      <aside className="w-[180px] bg-[#F2EDE4] p-5 flex flex-col justify-between border-r border-[#E5DDD2] shrink-0">
-        <div className="space-y-6">
+    <div className="w-full max-w-7xl min-h-[85vh] bg-[#FAF8F5] text-[#221611] rounded-3xl md:rounded-[40px] flex flex-col md:flex-row shadow-2xl border border-[#EAE3DA] font-sans relative overflow-hidden select-none">
+      {/* Left Sidebar */}
+      <aside className="w-full md:w-[180px] bg-[#F2EDE4] p-4 sm:p-5 flex md:flex-col justify-between border-b md:border-b-0 md:border-r border-[#E5DDD2] shrink-0">
+        <div className="space-y-4 md:space-y-6">
           {/* Brand */}
           <div>
             <div className="flex items-center gap-1.5">
@@ -82,7 +82,7 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
                 CAFE
               </span>
             </div>
-            <div className="mt-2">
+            <div className="mt-1 md:mt-2 hidden sm:block">
               <p className="text-[10px] font-bold text-[#221611] uppercase tracking-wider">THE COURTYARD</p>
               <p className="text-[10px] text-[#8C7A6D]">Saturday service</p>
             </div>
@@ -128,16 +128,16 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
         </div>
       </aside>
 
-      {/* Main Content Area (1260px) */}
-      <main className="flex-1 flex flex-col p-8 overflow-x-auto">
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 overflow-y-auto">
         {/* Workspace Header */}
-        <div className="flex justify-between items-center pb-5 border-b border-[#ECE5DC]">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-5 border-b border-[#ECE5DC]">
           <div>
-            <h1 className="text-2xl font-black text-[#221611]">Pickup orders</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-[#221611]">Pickup orders</h1>
             <p className="text-xs text-[#8C7A6D] mt-0.5">Sat, 17 Oct · 9:48 AM · The Courtyard</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {actionSuccessMsg && (
               <div className="px-3 py-1 bg-[#E8F3EB] text-[#246B3E] rounded-full text-xs font-bold border border-[#D2E7D7] animate-fade-in">
                 ✓ {actionSuccessMsg}
@@ -163,7 +163,7 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Find number or name"
-                className="pl-8 pr-3 py-1.5 bg-white border border-[#DFD6CC] rounded-xl text-xs text-[#221611] placeholder-[#A49588] focus:outline-hidden w-48"
+                className="pl-8 pr-3 py-1.5 bg-white border border-[#DFD6CC] rounded-xl text-xs text-[#221611] placeholder-[#A49588] focus:outline-hidden w-44 sm:w-48"
               />
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-[#8C7A6D]">🔍</span>
             </div>
@@ -200,9 +200,9 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
 
         {activeTab === 'active' ? (
           /* Active Board + Selected Details Panel */
-          <div className="mt-5 grid grid-cols-12 gap-6 items-start">
-            {/* Active Order Board (8 Cols) */}
-            <div className="col-span-8 grid grid-cols-3 gap-4">
+          <div className="mt-5 grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            {/* Active Order Board (8 Cols on xl) */}
+            <div className="xl:col-span-8 col-span-1 grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* COLUMN 1: INCOMING */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs font-bold text-[#6E5D50] pb-1 border-b border-[#ECE5DC]">
@@ -384,9 +384,9 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
               </div>
             </div>
 
-            {/* Selected Order Details Panel (4 Cols) */}
+            {/* Selected Order Details Panel (4 Cols on xl) */}
             {selectedOrder ? (
-              <div className="col-span-4 bg-white rounded-3xl p-5 border border-[#ECE5DC] shadow-xs space-y-4">
+              <div className="xl:col-span-4 col-span-1 bg-white rounded-3xl p-5 border border-[#ECE5DC] shadow-xs space-y-4">
                 <div className="flex items-center justify-between pb-2 border-b border-[#F2ECE3]">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E8F3EB] text-[#246B3E] rounded-full text-[10px] font-bold border border-[#D2E7D7]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#246B3E]"></span>

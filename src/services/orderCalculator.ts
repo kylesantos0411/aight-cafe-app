@@ -18,6 +18,7 @@ export function calculateAuthoritativeItemPrice(
   item: {
     size?: string;
     milk?: string;
+    sweetness?: string;
     extraShot?: boolean;
     quantity: number;
   }

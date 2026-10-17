@@ -27,25 +27,25 @@ export const StaffOrdersView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-start p-6 font-sans overflow-x-auto">
-      <div className="w-full flex justify-between items-center max-w-[1440px] pb-3 text-xs font-semibold text-[#7A695C]">
+    <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-start p-3 sm:p-6 font-sans">
+      <div className="w-full flex justify-between items-center max-w-7xl pb-3 text-xs font-semibold text-[#7A695C]">
         <button
           onClick={() => navigate('/')}
-          className="px-3 py-1.5 bg-white border border-[#DFD6CC] text-[#221611] rounded-xl hover:bg-[#FAF8F5] transition-colors"
+          className="px-3 py-1.5 bg-white border border-[#DFD6CC] text-[#221611] rounded-xl hover:bg-[#F2EDE4] transition-colors shadow-2xs"
         >
           ← Return to Customer App
         </button>
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/queue')}
-            className="px-3 py-1.5 bg-white border border-[#DFD6CC] text-[#221611] rounded-xl hover:bg-[#FAF8F5] transition-colors"
+            className="px-3 py-1.5 bg-white border border-[#DFD6CC] text-[#221611] rounded-xl hover:bg-[#F2EDE4] transition-colors shadow-2xs"
           >
             📺 Open Stall TV Screen
           </button>
         </div>
       </div>
 
-      <div className="my-auto transition-transform">
+      <div className="w-full max-w-7xl">
         <Screen13StaffOrders
           onOpenQueueDisplay={handleOpenQueueDisplay}
           onSignOut={handleSignOut}

@@ -52,15 +52,16 @@ export const CustomerAccountView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-start p-4 md:p-8 font-sans">
-      <div className="w-full max-w-[420px] min-h-[720px] bg-[#FAF8F5] text-[#221611] rounded-[44px] p-6 flex flex-col shadow-2xl border border-[#EAE3DA] relative select-none">
+    <div className="min-h-screen bg-[#FAF8F5] text-[#221611] font-sans flex flex-col selection:bg-[#221611] selection:text-[#FAF8F5]">
+      <div className="w-full max-w-xl mx-auto px-4 sm:px-6 md:px-8 py-5 md:py-8 flex-1 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#ECE5DC]">
           <button
             onClick={() => navigate('/')}
-            className="text-lg font-bold text-[#221611] p-1 -ml-1 hover:text-[#5C4A3E]"
+            className="flex items-center gap-2 text-sm font-bold text-[#221611] p-1 -ml-1 hover:text-[#5C4A3E] cursor-pointer"
           >
-            ←
+            <span>←</span>
+            <span>Back to menu</span>
           </button>
           <span className="font-bold text-sm text-[#221611]">Customer Account</span>
           <span className="text-xs text-[#8C7A6D]">☕</span>

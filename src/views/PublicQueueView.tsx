@@ -16,7 +16,7 @@ export const PublicQueueView: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#221611] flex flex-col items-center justify-center p-4 md:p-8 font-sans select-none">
       {/* Top control bar for TV Display Operators */}
-      <div className="w-full max-w-[1440px] flex justify-between items-center pb-3 text-xs text-[#C4B4A5]">
+      <div className="w-full max-w-7xl flex justify-between items-center pb-3 text-xs text-[#C4B4A5]">
         <button
           onClick={() => navigate('/')}
           className="hover:text-white transition-colors"
@@ -37,7 +37,7 @@ export const PublicQueueView: React.FC = () => {
         </div>
       </div>
 
-      <div className="my-auto transition-transform">
+      <div className="w-full max-w-7xl my-auto transition-transform">
         <Screen14StallQueue />
       </div>
     </div>

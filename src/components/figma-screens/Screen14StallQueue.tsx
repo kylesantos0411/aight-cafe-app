@@ -26,26 +26,26 @@ export const Screen14StallQueue: React.FC = () => {
   const preparing = preparingItems.map(q => q.queueNumber).join('  ') || 'A041';
 
   return (
-    <div className="w-[1440px] h-[900px] bg-[#FAF8F5] text-[#221611] rounded-[44px] p-10 flex flex-col justify-between shadow-2xl border border-[#EAE3DA] font-sans relative overflow-hidden select-none">
+    <div className="w-full max-w-7xl min-h-[85vh] bg-[#FAF8F5] text-[#221611] rounded-3xl sm:rounded-[44px] p-6 sm:p-10 flex flex-col justify-between shadow-2xl border border-[#EAE3DA] font-sans relative overflow-hidden select-none">
       {/* Top Header */}
       <div className="flex justify-between items-center pb-6 border-b border-[#ECE5DC]">
         <div className="flex items-center gap-2">
-          <span className="font-extrabold text-3xl tracking-tight text-[#221611]">aight .</span>
-          <span className="text-xs font-semibold tracking-widest text-[#7A695C] bg-[#ECE5DC] px-2.5 py-1 rounded-full">
+          <span className="font-extrabold text-2xl sm:text-3xl tracking-tight text-[#221611]">aight .</span>
+          <span className="text-[10px] sm:text-xs font-semibold tracking-widest text-[#7A695C] bg-[#ECE5DC] px-2.5 py-1 rounded-full">
             CAFE
           </span>
         </div>
 
-        <div className="flex items-center gap-6 text-sm font-semibold text-[#6E5D50]">
+        <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm font-semibold text-[#6E5D50]">
           <span>The Courtyard · Pickup only</span>
-          <span className="font-mono font-bold text-base text-[#221611]">{currentTime}</span>
+          <span className="font-mono font-bold text-sm sm:text-base text-[#221611]">{currentTime}</span>
         </div>
       </div>
 
       {/* Main Grid: Left Giant Now Serving Card + Right Queue Cards */}
-      <div className="grid grid-cols-12 gap-8 my-auto items-stretch">
-        {/* Left Column (7 Cols): NOW SERVING */}
-        <div className="col-span-7 bg-[#221611] text-white rounded-[40px] p-12 flex flex-col justify-between shadow-2xl shadow-black/20 relative overflow-hidden min-h-[560px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 my-auto items-stretch py-6">
+        {/* Left Column: NOW SERVING */}
+        <div className="lg:col-span-7 col-span-1 bg-[#221611] text-white rounded-[32px] sm:rounded-[40px] p-8 sm:p-12 flex flex-col justify-between shadow-2xl shadow-black/20 relative overflow-hidden min-h-[380px] sm:min-h-[500px]">
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 text-white rounded-full text-xs font-bold uppercase tracking-wider">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
@@ -53,14 +53,14 @@ export const Screen14StallQueue: React.FC = () => {
             </div>
           </div>
 
-          <div className="text-center my-auto py-8">
-            <div className="text-[140px] font-black tracking-tight leading-none font-mono text-[#FAF8F5] transition-all">
+          <div className="text-center my-auto py-6 sm:py-8">
+            <div className="text-7xl sm:text-9xl lg:text-[140px] font-black tracking-tight leading-none font-mono text-[#FAF8F5] transition-all">
               {nowServing}
             </div>
           </div>
 
           <div className="space-y-1.5 text-center border-t border-white/10 pt-6">
-            <p className="text-lg font-bold text-[#FAF8F5] flex items-center justify-center gap-2">
+            <p className="text-base sm:text-lg font-bold text-[#FAF8F5] flex items-center justify-center gap-2">
               <span>☕</span>
               Your order is ready at the counter.
             </p>
@@ -70,15 +70,15 @@ export const Screen14StallQueue: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column (5 Cols): READY FOR PICKUP + PREPARING */}
-        <div className="col-span-5 flex flex-col justify-between gap-6">
+        {/* Right Column: READY FOR PICKUP + PREPARING */}
+        <div className="lg:col-span-5 col-span-1 flex flex-col justify-between gap-6">
           {/* Top Card: READY FOR PICKUP */}
-          <div className="flex-1 bg-white rounded-[36px] p-8 border border-[#ECE5DC] flex flex-col justify-between shadow-xs">
+          <div className="flex-1 bg-white rounded-[32px] sm:rounded-[36px] p-6 sm:p-8 border border-[#ECE5DC] flex flex-col justify-between shadow-xs">
             <div className="text-xs font-bold tracking-widest uppercase text-[#8C7A6D]">
               READY FOR PICKUP
             </div>
             <div className="my-auto py-4">
-              <div className="text-7xl font-black font-mono text-[#221611] tracking-wide">
+              <div className="text-5xl sm:text-7xl font-black font-mono text-[#221611] tracking-wide break-words">
                 {nextReady}
               </div>
             </div>
@@ -88,12 +88,12 @@ export const Screen14StallQueue: React.FC = () => {
           </div>
 
           {/* Bottom Card: PREPARING */}
-          <div className="flex-1 bg-[#F2EDE4] rounded-[36px] p-8 border border-[#E5DDD2] flex flex-col justify-between shadow-xs">
+          <div className="flex-1 bg-[#F2EDE4] rounded-[32px] sm:rounded-[36px] p-6 sm:p-8 border border-[#E5DDD2] flex flex-col justify-between shadow-xs">
             <div className="text-xs font-bold tracking-widest uppercase text-[#8C7A6D]">
               PREPARING
             </div>
             <div className="my-auto py-4">
-              <div className="text-7xl font-black font-mono text-[#544337] tracking-wide">
+              <div className="text-5xl sm:text-7xl font-black font-mono text-[#544337] tracking-wide break-words">
                 {preparing}
               </div>
             </div>
