@@ -173,37 +173,130 @@ class OrderRepository {
   }
 
   /**
+   * Internal helper to find an order in local memory or fetch it directly from Supabase.
+   * Eliminates "Order not found" when staff actions on orders created on another device.
+   */
+  private async findOrFetchOrder(orderId: string): Promise<{ order: Order; orderIndex: number; orders: Order[] }> {
+    const orders = this.getStoredOrders();
+    let orderIndex = orders.findIndex(
+      o => o.id === orderId || o.code === orderId || o.requestReference === orderId
+    );
+
+    if (orderIndex !== -1) {
+      return { order: orders[orderIndex], orderIndex, orders };
+    }
+
+    // Not in local storage; attempt to fetch directly from Supabase
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const isUUID = /^[0-9a-f-]{36}$/i.test(orderId);
+        let query = supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (
+              id,
+              product_name,
+              unit_price,
+              quantity,
+              item_total,
+              customization_summary
+            )
+          `);
+
+        if (isUUID) {
+          query = query.eq('id', orderId);
+        } else {
+          query = query.or(`request_reference.eq.${orderId},pickup_number.eq.${orderId}`);
+        }
+
+        const { data, error } = await query.limit(1).maybeSingle();
+        if (!error && data) {
+          const mapped = this.mapSupabaseOrder(data);
+          orders.unshift(mapped);
+          this.saveOrders(orders);
+          return { order: mapped, orderIndex: 0, orders };
+        }
+      } catch (err) {
+        console.warn('Supabase findOrFetchOrder fallback failed:', err);
+      }
+    }
+
+    throw new Error(`Order ${orderId} not found.`);
+  }
+
+  /**
+   * Resolves an authorized UUID staff ID from explicit parameter or active Supabase session.
+   */
+  private async resolveStaffId(providedStaffId?: string): Promise<string | null> {
+    if (providedStaffId && /^[0-9a-f-]{36}$/i.test(providedStaffId)) {
+      return providedStaffId;
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id && /^[0-9a-f-]{36}$/i.test(user.id)) {
+          return user.id;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Accept order (Staff operation).
    * Atomically assigns daily sequence queue number (e.g. A042) and marks confirmed.
    */
-  public async acceptOrder(orderId: string, staffId: string = 'staff_operator'): Promise<Order> {
-    const orders = this.getStoredOrders();
-    const orderIndex = orders.findIndex(o => o.id === orderId || o.code === orderId || o.requestReference === orderId);
+  public async acceptOrder(orderId: string, staffId?: string): Promise<Order> {
+    const { order, orderIndex, orders } = await this.findOrFetchOrder(orderId);
 
-    if (orderIndex === -1) {
-      throw new Error(`Order ${orderId} not found.`);
-    }
-
-    const order = orders[orderIndex];
     if (order.status !== 'pending') {
-      throw new Error(`Order ${order.code} has already been processed.`);
+      throw new Error(`Order ${order.code || order.requestReference} has already been processed.`);
     }
 
     let queueNumber = this.getNextQueueNumber();
+    const validStaffId = await this.resolveStaffId(staffId);
 
-    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id) && /^[0-9a-f-]{36}$/i.test(staffId)) {
-      try {
-        const { data: rpcRes, error } = await supabase.rpc('fn_accept_order', {
-          p_order_id: order.id,
-          p_staff_id: staffId,
-        });
+    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id)) {
+      let rpcSuccess = false;
+      if (validStaffId) {
+        try {
+          const { data: rpcRes, error } = await supabase.rpc('fn_accept_order', {
+            p_order_id: order.id,
+            p_staff_id: validStaffId,
+          });
 
-        if (error) throw error;
-        if (rpcRes && rpcRes.pickup_number) {
-          queueNumber = rpcRes.pickup_number;
+          if (!error && rpcRes) {
+            rpcSuccess = true;
+            if (rpcRes.pickup_number) {
+              queueNumber = rpcRes.pickup_number;
+            }
+          } else if (error) {
+            console.warn('fn_accept_order notice:', error.message);
+          }
+        } catch (err) {
+          console.warn('Supabase fn_accept_order call failed:', err);
         }
-      } catch (err) {
-        console.warn('Supabase fn_accept_order call failed:', err);
+      }
+
+      // Direct fallback if RPC was not invoked or errored
+      if (!rpcSuccess) {
+        try {
+          await supabase
+            .from('orders')
+            .update({
+              status: 'confirmed',
+              pickup_number: queueNumber,
+              accepted_at: new Date().toISOString(),
+            })
+            .eq('id', order.id);
+        } catch (err) {
+          console.warn('Direct order accept update fallback note:', err);
+        }
       }
     }
 
@@ -224,28 +317,43 @@ class OrderRepository {
   /**
    * Verify cash payment (Staff operation).
    */
-  public async verifyCashPayment(orderId: string, staffId: string = 'staff_operator'): Promise<Order> {
-    const orders = this.getStoredOrders();
-    const orderIndex = orders.findIndex(o => o.id === orderId || o.code === orderId);
+  public async verifyCashPayment(orderId: string, staffId?: string): Promise<Order> {
+    const { order, orderIndex, orders } = await this.findOrFetchOrder(orderId);
 
-    if (orderIndex === -1) {
-      throw new Error(`Order ${orderId} not found.`);
-    }
-
-    const order = orders[orderIndex];
     const updatedOrder: Order = {
       ...order,
       paymentStatus: 'verified',
     };
 
-    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id) && /^[0-9a-f-]{36}$/i.test(staffId)) {
-      try {
-        await supabase.rpc('fn_verify_cash_payment', {
-          p_order_id: order.id,
-          p_staff_id: staffId,
-        });
-      } catch (err) {
-        console.warn('Supabase fn_verify_cash_payment failed:', err);
+    const validStaffId = await this.resolveStaffId(staffId);
+
+    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id)) {
+      let rpcSuccess = false;
+      if (validStaffId) {
+        try {
+          const { error } = await supabase.rpc('fn_verify_cash_payment', {
+            p_order_id: order.id,
+            p_staff_id: validStaffId,
+          });
+          if (!error) rpcSuccess = true;
+        } catch (err) {
+          console.warn('Supabase fn_verify_cash_payment failed:', err);
+        }
+      }
+
+      if (!rpcSuccess) {
+        try {
+          await supabase
+            .from('orders')
+            .update({
+              payment_status: 'verified',
+              cash_verified_at: new Date().toISOString(),
+              cash_amount_received: order.totalAmount,
+            })
+            .eq('id', order.id);
+        } catch (err) {
+          console.warn('Direct cash verify update fallback note:', err);
+        }
       }
     }
 
@@ -263,16 +371,9 @@ class OrderRepository {
     orderId: string,
     nextStatus: OrderStatus,
     reason?: string,
-    staffId: string = 'staff_operator'
+    staffId?: string
   ): Promise<Order> {
-    const orders = this.getStoredOrders();
-    const orderIndex = orders.findIndex(o => o.id === orderId || o.code === orderId);
-
-    if (orderIndex === -1) {
-      throw new Error(`Order ${orderId} not found.`);
-    }
-
-    const order = orders[orderIndex];
+    const { order, orderIndex, orders } = await this.findOrFetchOrder(orderId);
 
     // HARD SECURITY GATE: Order can NEVER be completed unless cash payment has been verified
     if (nextStatus === 'completed' && order.paymentStatus !== 'verified') {
@@ -287,16 +388,43 @@ class OrderRepository {
       completedAt: nextStatus === 'completed' ? new Date().toISOString() : order.completedAt,
     };
 
-    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id) && /^[0-9a-f-]{36}$/i.test(staffId)) {
-      try {
-        await supabase.rpc('fn_update_order_status', {
-          p_order_id: order.id,
-          p_new_status: nextStatus,
-          p_reason: reason || null,
-          p_staff_id: staffId,
-        });
-      } catch (err) {
-        console.warn('Supabase fn_update_order_status failed:', err);
+    const validStaffId = await this.resolveStaffId(staffId);
+
+    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id)) {
+      let rpcSuccess = false;
+      if (validStaffId) {
+        try {
+          const { error } = await supabase.rpc('fn_update_order_status', {
+            p_order_id: order.id,
+            p_new_status: nextStatus,
+            p_staff_id: validStaffId,
+            p_reason: reason || null,
+          });
+          if (!error) {
+            rpcSuccess = true;
+          } else {
+            console.warn('fn_update_order_status notice:', error.message);
+          }
+        } catch (err) {
+          console.warn('Supabase fn_update_order_status failed:', err);
+        }
+      }
+
+      // Direct fallback update if RPC didn't execute
+      if (!rpcSuccess) {
+        try {
+          await supabase
+            .from('orders')
+            .update({
+              status: nextStatus,
+              payment_status: nextStatus === 'cancelled' ? 'voided' : order.paymentStatus,
+              cancellation_reason: reason || order.cancellationReason,
+              completed_at: nextStatus === 'completed' ? new Date().toISOString() : null,
+            })
+            .eq('id', order.id);
+        } catch (err) {
+          console.warn('Direct order status update fallback note:', err);
+        }
       }
     }
 

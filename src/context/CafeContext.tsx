@@ -313,7 +313,8 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const acceptOrder = async (orderId: string): Promise<Order> => {
-    const updated = await orderService.acceptOrder(orderId);
+    const updated = await orderService.acceptOrder(orderId, staffUser?.id);
+    await refreshOrders();
     return updated;
   };
 
@@ -322,12 +323,14 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     status: OrderStatus,
     reason?: string
   ): Promise<Order> => {
-    const updated = await orderService.updateOrderStatus(orderId, status, reason);
+    const updated = await orderService.updateOrderStatus(orderId, status, reason, staffUser?.id);
+    await refreshOrders();
     return updated;
   };
 
   const verifyCashPayment = async (orderId: string): Promise<Order> => {
-    const updated = await orderService.verifyCashPayment(orderId);
+    const updated = await orderService.verifyCashPayment(orderId, staffUser?.id);
+    await refreshOrders();
     return updated;
   };
 

@@ -30,6 +30,8 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
   const [voidingOrder, setVoidingOrder] = useState<Order | null>(null);
   const [voidReason, setVoidReason] = useState<string>('Customer requested cancellation');
   const [customVoidReason, setCustomVoidReason] = useState<string>('');
+  const [isVoiding, setIsVoiding] = useState<boolean>(false);
+  const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
 
   // Daily Close & Reset Modal State
   const [showDailyCloseModal, setShowDailyCloseModal] = useState<boolean>(false);
@@ -83,12 +85,16 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
   };
 
   const handleAccept = async (orderId: string) => {
+    if (acceptingOrderId) return;
+    setAcceptingOrderId(orderId);
     try {
       const updated = await acceptOrder(orderId);
       setSelectedOrderId(updated.id);
       showNotice(`Accepted order ${updated.code}`);
     } catch (err: any) {
-      alert(err.message);
+      alert(err.message || 'Failed to accept order.');
+    } finally {
+      setAcceptingOrderId(null);
     }
   };
 
@@ -106,18 +112,22 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
   };
 
   const handleConfirmVoid = async () => {
-    if (!voidingOrder) return;
+    if (!voidingOrder || isVoiding) return;
+    setIsVoiding(true);
     try {
       const reason = voidReason === 'Other' ? customVoidReason.trim() || 'Voided by stall operator' : voidReason;
       await updateOrderStatus(voidingOrder.id, 'cancelled', reason);
       if (selectedOrderId === voidingOrder.id) {
         setSelectedOrderId(null);
       }
+      const voidedRef = voidingOrder.code || voidingOrder.requestReference;
       setVoidingOrder(null);
       setCustomVoidReason('');
-      showNotice(`Order ${voidingOrder.code || voidingOrder.requestReference} has been voided.`);
+      showNotice(`Order ${voidedRef} has been voided.`);
     } catch (err: any) {
-      alert(err.message);
+      alert(err.message || 'Failed to void order.');
+    } finally {
+      setIsVoiding(false);
     }
   };
 
@@ -364,9 +374,10 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
                     <div className="flex items-center gap-2 pt-1" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={() => handleAccept(order.id)}
-                        className="flex-1 py-1.5 bg-[#221611] text-white rounded-full text-xs font-bold hover:bg-[#36251E] transition-colors cursor-pointer"
+                        disabled={acceptingOrderId === order.id}
+                        className="flex-1 py-1.5 bg-[#221611] text-white rounded-full text-xs font-bold hover:bg-[#36251E] disabled:opacity-50 transition-colors cursor-pointer"
                       >
-                        Accept
+                        {acceptingOrderId === order.id ? 'Accepting...' : 'Accept'}
                       </button>
                       <button
                         onClick={() => setVoidingOrder(order)}
@@ -645,9 +656,10 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
                   <div className="pt-2 space-y-2">
                     <button
                       onClick={() => handleAccept(selectedOrder!.id)}
-                      className="w-full py-2.5 bg-[#221611] hover:bg-[#36251E] text-white rounded-full font-bold text-xs transition-colors cursor-pointer"
+                      disabled={acceptingOrderId === selectedOrder!.id}
+                      className="w-full py-2.5 bg-[#221611] hover:bg-[#36251E] disabled:opacity-50 text-white rounded-full font-bold text-xs transition-colors cursor-pointer"
                     >
-                      Accept & Assign Pickup #
+                      {acceptingOrderId === selectedOrder!.id ? 'Accepting...' : 'Accept & Assign Pickup #'}
                     </button>
                   </div>
                 )}
@@ -813,9 +825,10 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
               </button>
               <button
                 onClick={handleConfirmVoid}
-                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                disabled={isVoiding}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
               >
-                Confirm Void
+                {isVoiding ? 'Voiding...' : 'Confirm Void'}
               </button>
             </div>
           </div>
