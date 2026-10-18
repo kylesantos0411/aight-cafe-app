@@ -153,7 +153,7 @@ export const TrackOrderView: React.FC = () => {
                       type="text"
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      placeholder="e.g. A042, R-8F2B, or order token"
+                      placeholder="e.g. Card #01, 1–20, R-8F2B, or order token"
                       className="w-full px-4 py-3.5 bg-[#FAF8F5] rounded-2xl border border-[#DFD6CC] text-xs font-semibold text-[#221611] focus:outline-hidden focus:ring-2 focus:ring-[#221611] uppercase tracking-wider"
                     />
                   </div>

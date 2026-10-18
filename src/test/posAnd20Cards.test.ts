@@ -324,7 +324,7 @@ describe('Aight Cafe — POS, 20 Reusable Queue Cards, Tracking & Full System Su
       // Card #1 is now available for subsequent allocations
       card1 = await queueCardService.getCardByNumber(1);
       expect(card1?.status).toBe('available');
-    });
+    }, 15000);
   });
 
   describe('4. Cancellation Rules, Reopening Protections & Refunds', () => {

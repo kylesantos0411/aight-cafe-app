@@ -407,9 +407,8 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetDemoData = () => {
-    setOrders(INITIAL_ORDERS);
-    const a042 = INITIAL_ORDERS.find(o => o.code === 'A042') || INITIAL_ORDERS[0];
-    setActiveOrder(a042);
+    setOrders([]);
+    setActiveOrder(null);
     setCart([]);
     setIsOffline(false);
     localStorage.removeItem('aight_cafe_orders_v2');

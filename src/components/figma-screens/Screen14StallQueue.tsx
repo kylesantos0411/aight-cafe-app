@@ -20,10 +20,9 @@ export const Screen14StallQueue: React.FC = () => {
   const readyItems = publicQueue.filter(q => q.status === 'ready');
   const preparingItems = publicQueue.filter(q => q.status === 'preparing');
 
-  // Fallbacks matching exact Figma artboard if queue is fresh
-  const nowServing = readyItems[0]?.queueNumber || 'A042';
-  const nextReady = readyItems.slice(1).map(q => q.queueNumber).join('  ') || 'A040';
-  const preparing = preparingItems.map(q => q.queueNumber).join('  ') || 'A041';
+  const nowServing = readyItems.length > 0 ? readyItems[0].queueNumber : null;
+  const nextReadyList = readyItems.slice(1).map(q => q.queueNumber);
+  const preparingList = preparingItems.map(q => q.queueNumber);
 
   return (
     <div className="w-full max-w-7xl min-h-[85vh] bg-[#FAF8F5] text-[#221611] rounded-3xl sm:rounded-[44px] p-6 sm:p-10 flex flex-col justify-between shadow-2xl border border-[#EAE3DA] font-sans relative overflow-hidden select-none">
@@ -48,24 +47,28 @@ export const Screen14StallQueue: React.FC = () => {
         <div className="lg:col-span-7 col-span-1 bg-[#221611] text-white rounded-[32px] sm:rounded-[40px] p-8 sm:p-12 flex flex-col justify-between shadow-2xl shadow-black/20 relative overflow-hidden min-h-[380px] sm:min-h-[500px]">
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 text-white rounded-full text-xs font-bold uppercase tracking-wider">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span className={`w-2.5 h-2.5 rounded-full ${nowServing ? 'bg-emerald-400 animate-ping' : 'bg-[#A8988B]'}`}></span>
               NOW SERVING
             </div>
           </div>
 
           <div className="text-center my-auto py-6 sm:py-8">
-            <div className="text-7xl sm:text-9xl lg:text-[140px] font-black tracking-tight leading-none font-mono text-[#FAF8F5] transition-all">
-              {nowServing}
+            <div className={`font-black tracking-tight leading-none font-mono transition-all ${
+              nowServing
+                ? 'text-5xl sm:text-7xl lg:text-8xl text-[#FAF8F5]'
+                : 'text-7xl sm:text-9xl text-white/20'
+            }`}>
+              {nowServing || '—'}
             </div>
           </div>
 
           <div className="space-y-1.5 text-center border-t border-white/10 pt-6">
             <p className="text-base sm:text-lg font-bold text-[#FAF8F5] flex items-center justify-center gap-2">
               <span>☕</span>
-              Your order is ready at the counter.
+              {nowServing ? 'Your order is ready at the counter.' : 'All orders served.'}
             </p>
             <p className="text-xs text-[#CFC3B5]">
-              Have your pickup number ready.
+              {nowServing ? 'Please present your Queue Card (1–20) for pickup.' : 'Watch this screen when your Card (1–20) is called.'}
             </p>
           </div>
         </div>
@@ -78,12 +81,18 @@ export const Screen14StallQueue: React.FC = () => {
               READY FOR PICKUP
             </div>
             <div className="my-auto py-4">
-              <div className="text-5xl sm:text-7xl font-black font-mono text-[#221611] tracking-wide break-words">
-                {nextReady}
-              </div>
+              {nextReadyList.length > 0 ? (
+                <div className="text-3xl sm:text-5xl font-black font-mono text-[#221611] tracking-wide break-words">
+                  {nextReadyList.join('   ')}
+                </div>
+              ) : (
+                <div className="text-5xl sm:text-6xl font-bold font-mono text-[#D6CCC2]">
+                  —
+                </div>
+              )}
             </div>
             <p className="text-xs text-[#69584B] border-t border-[#F4EFEA] pt-4">
-              You can collect your order from our team.
+              {nextReadyList.length > 0 ? 'You can collect your order from our team.' : 'No other orders waiting for pickup.'}
             </p>
           </div>
 
@@ -93,12 +102,18 @@ export const Screen14StallQueue: React.FC = () => {
               PREPARING
             </div>
             <div className="my-auto py-4">
-              <div className="text-5xl sm:text-7xl font-black font-mono text-[#544337] tracking-wide break-words">
-                {preparing}
-              </div>
+              {preparingList.length > 0 ? (
+                <div className="text-3xl sm:text-5xl font-black font-mono text-[#544337] tracking-wide break-words">
+                  {preparingList.join('   ')}
+                </div>
+              ) : (
+                <div className="text-5xl sm:text-6xl font-bold font-mono text-[#C4B7AA]">
+                  —
+                </div>
+              )}
             </div>
             <p className="text-xs text-[#69584B] border-t border-[#E5DDD2] pt-4">
-              We're working on your good stuff.
+              {preparingList.length > 0 ? "We're working on your good stuff." : 'No orders currently in preparation.'}
             </p>
           </div>
         </div>
