@@ -122,7 +122,7 @@ export const StaffLoginView: React.FC = () => {
           </div>
 
           <div className="text-center text-[11px] text-[#A59588] mt-6 flex items-center justify-center gap-3">
-            <span>Aight Cafe · The Courtyard</span>
+            <span>Aight Cafe · Silangan, San Mateo, Rizal</span>
             <span>·</span>
             <Link to="/" className="text-[#221611] font-semibold hover:underline">Customer App</Link>
           </div>

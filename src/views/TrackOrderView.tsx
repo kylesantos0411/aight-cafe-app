@@ -117,7 +117,7 @@ export const TrackOrderView: React.FC = () => {
                   🎯
                 </div>
                 <div>
-                  <h3 className="font-bold text-xs text-[#221611]">The Courtyard Pickup Station</h3>
+                  <h3 className="font-bold text-xs text-[#221611]">Silangan, San Mateo, Rizal Pickup Station</h3>
                   <p className="text-[11px] text-[#7A695C]">
                     Check your live order status, queue number, and barista prep.
                   </p>

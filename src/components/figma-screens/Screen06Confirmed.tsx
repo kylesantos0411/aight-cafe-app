@@ -78,7 +78,7 @@ export const Screen06Confirmed: React.FC<Props> = ({ onNext: _onNext }) => {
       <div className="mt-3 p-4 bg-white rounded-2xl border border-[#ECE5DC] text-xs space-y-1 shadow-xs">
         <div className="font-bold text-[#221611] flex items-center gap-1.5">
           <span>📍</span>
-          The Courtyard · Aight stall
+          Silangan, San Mateo, Rizal · Aight stall
         </div>
         <p className="text-[11px] text-[#7A695C]">
           Show this screen to the barista when your number is called.

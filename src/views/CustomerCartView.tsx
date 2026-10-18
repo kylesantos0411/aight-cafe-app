@@ -118,7 +118,7 @@ export const CustomerCartView: React.FC = () => {
                 <span className="font-semibold text-[#221611]">₱{cartTotal}</span>
               </div>
               <div className="flex justify-between text-[#6E5D50]">
-                <span>Pickup at stall (The Courtyard)</span>
+                <span>Pickup at stall (Silangan, San Mateo, Rizal)</span>
                 <span className="font-semibold text-emerald-700">Free</span>
               </div>
               <div className="flex justify-between text-base font-black text-[#221611] pt-2 border-t border-[#ECE5DC]">
@@ -130,7 +130,7 @@ export const CustomerCartView: React.FC = () => {
             <div className="p-4 bg-[#F2EDE4] rounded-2xl border border-[#E5DDD2] text-xs flex gap-3">
               <span className="text-base">☕</span>
               <div>
-                <div className="font-bold text-[#221611]">Pickup at The Courtyard</div>
+                <div className="font-bold text-[#221611]">Pickup at Silangan, San Mateo, Rizal</div>
                 <p className="text-xs text-[#69584B] mt-0.5 leading-relaxed">
                   Your order is prepared fresh after barista accepts. Pay with cash when you pick it up.
                 </p>

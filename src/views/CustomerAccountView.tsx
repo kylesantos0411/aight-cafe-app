@@ -195,7 +195,7 @@ export const CustomerAccountView: React.FC = () => {
 
         {/* Footer */}
         <div className="pt-6 text-center text-xs text-[#8C7A6D]">
-          <span>Aight Cafe · The Courtyard</span>
+          <span>Aight Cafe · Silangan, San Mateo, Rizal</span>
         </div>
       </div>
     </div>

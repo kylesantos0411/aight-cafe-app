@@ -37,7 +37,7 @@ export const Screen14StallQueue: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm font-semibold text-[#6E5D50]">
-          <span>The Courtyard · Pickup only</span>
+          <span>Silangan, San Mateo, Rizal · Pickup only</span>
           <span className="font-mono font-bold text-sm sm:text-base text-[#221611]">{currentTime}</span>
         </div>
       </div>

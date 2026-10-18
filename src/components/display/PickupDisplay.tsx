@@ -33,7 +33,7 @@ export const PickupDisplay: React.FC = () => {
           <div>
             <h1 className="text-3xl font-black tracking-tight font-display text-white">aight. cafe</h1>
             <p className="text-xs text-[#C4B4A5] tracking-widest uppercase font-semibold">
-              Pickup Status Display · The Courtyard
+              Pickup Status Display · Silangan, San Mateo, Rizal
             </p>
           </div>
         </div>

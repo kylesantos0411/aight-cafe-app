@@ -173,7 +173,7 @@ export const ReorderView: React.FC = () => {
                 <div className="text-3xl">☕</div>
                 <h3 className="font-bold text-sm text-[#221611]">No previous orders found</h3>
                 <p className="text-xs text-[#7A695C] max-w-sm mx-auto leading-relaxed">
-                  Start fresh with today's handcrafted drinks and bakes at The Courtyard.
+                  Start fresh with today's handcrafted drinks and bakes at Silangan, San Mateo, Rizal.
                 </p>
                 <button
                   onClick={() => navigate('/menu')}

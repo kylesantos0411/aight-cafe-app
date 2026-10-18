@@ -81,7 +81,7 @@ export const Screen04Checkout: React.FC<Props> = ({ onBack, onPlaceOrder }) => {
       <div className="mt-4 p-4 bg-white rounded-2xl border border-[#ECE5DC] text-xs space-y-1 shadow-xs">
         <div className="font-bold text-[#221611] flex items-center gap-1.5">
           <span>📍</span>
-          The Courtyard · Aight popup
+          Silangan, San Mateo, Rizal · Aight popup
         </div>
         <div className="text-[11px] text-[#7A695C]">Today, as soon as possible</div>
         <div className="text-[10px] text-[#8C7A6D]">Approx. 8–12 min after acceptance</div>

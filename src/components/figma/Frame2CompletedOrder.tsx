@@ -88,7 +88,7 @@ export const Frame2CompletedOrder: React.FC<{ onBackToMenu?: () => void }> = ({ 
           <span>Total paid</span>
           <span>P265</span>
         </div>
-        <p className="text-[9px] text-[#8C7A6D]">Card payment · Visa Courtyard</p>
+        <p className="text-[9px] text-[#8C7A6D]">Card payment · Silangan, San Mateo, Rizal</p>
       </div>
 
       {/* Bottom Button */}

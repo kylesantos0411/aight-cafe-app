@@ -68,7 +68,7 @@ export const Frame5StaffSignIn: React.FC<{ onSignIn?: () => void }> = ({ onSignI
         </div>
 
         <div className="text-center text-[10px] text-[#A59588] mt-4">
-          Aight Cafe · The Courtyard
+          Aight Cafe · Silangan, San Mateo, Rizal
         </div>
       </div>
 

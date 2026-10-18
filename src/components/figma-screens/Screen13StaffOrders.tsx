@@ -85,7 +85,7 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
               </span>
             </div>
             <div className="mt-1 md:mt-2 hidden sm:block">
-              <p className="text-[10px] font-bold text-[#221611] uppercase tracking-wider">THE COURTYARD</p>
+              <p className="text-[10px] font-bold text-[#221611] uppercase tracking-wider">SILANGAN, SAN MATEO, RIZAL</p>
               <p className="text-[10px] text-[#8C7A6D]">Saturday service</p>
             </div>
           </div>
@@ -149,7 +149,7 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-5 border-b border-[#ECE5DC]">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-[#221611]">Pickup orders</h1>
-            <p className="text-xs text-[#8C7A6D] mt-0.5">Sat, 17 Oct · 9:48 AM · The Courtyard</p>
+            <p className="text-xs text-[#8C7A6D] mt-0.5">Sat, 17 Oct · 9:48 AM · Silangan, San Mateo, Rizal</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">

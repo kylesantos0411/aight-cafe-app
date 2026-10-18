@@ -145,7 +145,7 @@ export const Screen03Cart: React.FC<Props> = ({ onBack, onCheckout, onAddMore })
       <div className="mt-5 p-3.5 bg-[#F2EDE4] rounded-2xl border border-[#E5DDD2] text-xs flex gap-2.5">
         <span className="text-sm">☕</span>
         <div>
-          <div className="font-bold text-[#221611]">Pickup at The Courtyard</div>
+          <div className="font-bold text-[#221611]">Pickup at Silangan, San Mateo, Rizal</div>
           <p className="text-[11px] text-[#69584B] mt-0.5 leading-relaxed">
             Your order is made after the team accepts it. Usually ready in 8–12 minutes.
           </p>

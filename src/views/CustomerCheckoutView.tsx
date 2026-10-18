@@ -52,7 +52,7 @@ export const CustomerCheckoutView: React.FC = () => {
             <span>Back to cart</span>
           </button>
           <span className="font-bold text-sm text-[#7A695C]">Checkout</span>
-          <span className="text-xs font-semibold text-[#8C7A6D]">The Courtyard</span>
+          <span className="text-xs font-semibold text-[#8C7A6D]">Silangan, San Mateo, Rizal</span>
         </header>
 
         {/* Title */}
@@ -67,7 +67,7 @@ export const CustomerCheckoutView: React.FC = () => {
         <div className="mt-6 p-4 sm:p-5 bg-white rounded-3xl border border-[#ECE5DC] text-xs sm:text-sm space-y-1.5 shadow-xs">
           <div className="font-bold text-[#221611] flex items-center gap-2 text-sm sm:text-base">
             <span>📍</span>
-            <span>The Courtyard · Aight Cafe popup</span>
+            <span>Silangan, San Mateo, Rizal · Aight Cafe popup</span>
           </div>
           <div className="text-xs text-[#7A695C] pl-6">Today, as soon as possible</div>
           <div className="text-xs font-medium text-emerald-700 pl-6">Estimated prep: 8–12 minutes after staff acceptance</div>

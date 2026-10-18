@@ -98,7 +98,7 @@ export const Screen12StaffSignIn: React.FC<Props> = ({ onSignIn }) => {
         </div>
 
         <div className="text-center text-[11px] text-[#A59588] mt-6">
-          Aight Cafe · The Courtyard
+          Aight Cafe · Silangan, San Mateo, Rizal
         </div>
       </div>
     </div>

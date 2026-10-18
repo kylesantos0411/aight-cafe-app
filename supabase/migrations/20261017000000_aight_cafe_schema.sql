@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE IF NOT EXISTS public.store_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   store_name TEXT NOT NULL DEFAULT 'Aight Cafe',
-  stall_location TEXT NOT NULL DEFAULT 'The Courtyard',
+  stall_location TEXT NOT NULL DEFAULT 'Silangan, San Mateo, Rizal',
   is_open BOOLEAN NOT NULL DEFAULT true,
   opening_time TIME NOT NULL DEFAULT '08:00',
   closing_time TIME NOT NULL DEFAULT '18:00',
@@ -625,7 +625,7 @@ $$;
 -- INITIAL SEED DATA (Aight Cafe Menu from Design)
 -- =====================================================================
 INSERT INTO public.store_settings (store_name, stall_location, is_open, opening_time, closing_time)
-VALUES ('Aight Cafe', 'The Courtyard', true, '08:00', '18:00')
+VALUES ('Aight Cafe', 'Silangan, San Mateo, Rizal', true, '08:00', '18:00')
 ON CONFLICT DO NOTHING;
 
 -- Categories

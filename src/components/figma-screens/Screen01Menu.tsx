@@ -48,7 +48,7 @@ export const Screen01Menu: React.FC<Props> = ({ onSelectItem, onViewCart }) => {
         </h1>
         <p className="text-xs text-[#7A695C] mt-2 flex items-center gap-1 font-medium">
           <span>📍</span>
-          Aight popup · The Courtyard
+          Aight popup · Silangan, San Mateo, Rizal
         </p>
       </div>
 

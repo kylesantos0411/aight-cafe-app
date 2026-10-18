@@ -71,7 +71,7 @@ export const AdminMenuView: React.FC = () => {
                 </span>
               </div>
               <div className="mt-1 md:mt-2 hidden sm:block">
-                <p className="text-[10px] font-bold text-[#221611] uppercase tracking-wider">THE COURTYARD</p>
+                <p className="text-[10px] font-bold text-[#221611] uppercase tracking-wider">SILANGAN, SAN MATEO, RIZAL</p>
                 <p className="text-[10px] text-[#8C7A6D]">Menu Management</p>
               </div>
             </div>

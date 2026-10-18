@@ -42,7 +42,7 @@ export const AdminLayout: React.FC<Props> = ({ children, title = 'Staff Portal',
               </span>
             </div>
             <span className="hidden sm:inline-block text-xs font-semibold text-[#8C7A6D]">
-              · The Courtyard
+              · Silangan, San Mateo, Rizal
             </span>
           </div>
 

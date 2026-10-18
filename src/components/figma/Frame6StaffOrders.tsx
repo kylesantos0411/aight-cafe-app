@@ -10,12 +10,12 @@ export const Frame6StaffOrders: React.FC = () => {
             <span className="font-bold text-xl tracking-tight">aight.</span>
             <span className="text-xs text-[#8C7A6D]">· cafe</span>
           </div>
-          <p className="text-xs text-[#8C7A6D] mt-0.5">The Courtyard · Station 01</p>
+          <p className="text-xs text-[#8C7A6D] mt-0.5">Silangan, San Mateo, Rizal · Station 01</p>
         </div>
 
         <div className="text-right">
           <h2 className="text-xl font-bold tracking-tight text-[#221611]">Pickup orders</h2>
-          <p className="text-xs text-[#8C7A6D] mt-0.5">Sep 17, 9:41 AM · The Courtyard</p>
+          <p className="text-xs text-[#8C7A6D] mt-0.5">Sep 17, 9:41 AM · Silangan, San Mateo, Rizal</p>
         </div>
       </div>
 

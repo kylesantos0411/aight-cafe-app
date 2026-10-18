@@ -85,7 +85,7 @@ export const Screen05Pending: React.FC<Props> = ({ onSimulateAccept }) => {
 
         <div className="pt-2 border-t border-[#F2ECE3] flex justify-between items-center text-[#6E5D50]">
           <span>Pickup location</span>
-          <span className="font-semibold text-[#221611]">The Courtyard</span>
+          <span className="font-semibold text-[#221611]">Silangan, San Mateo, Rizal</span>
         </div>
 
         <div className="flex justify-between items-center text-[#6E5D50]">

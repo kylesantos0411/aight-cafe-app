@@ -90,7 +90,7 @@ export const Screen09Completed: React.FC<Props> = ({ onBackToMenu }) => {
           <span>☕</span>
         </button>
         <p className="text-xs text-center text-[#8C7A6D]">
-          See you next time at The Courtyard.
+          See you next time at Silangan, San Mateo, Rizal.
         </p>
       </div>
     </div>

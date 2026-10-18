@@ -81,7 +81,7 @@ export const CustomerRewardsView: React.FC = () => {
                 {customer ? `Welcome back, ${customer.fullName.split(' ')[0]}.` : 'Aight Coffee Rewards.'}
               </h1>
               <p className="text-xs sm:text-sm text-[#7A695C] mt-1.5 leading-relaxed">
-                Collect 8 stamps at our Courtyard stall. Enjoy a handcrafted beverage on us.
+                Collect 8 stamps at our Silangan, San Mateo, Rizal stall. Enjoy a handcrafted beverage on us.
               </p>
             </div>
 
@@ -94,7 +94,7 @@ export const CustomerRewardsView: React.FC = () => {
                   <span className="text-[10px] tracking-widest uppercase font-bold text-[#C7B9AC]">
                     Digital Stamp Card
                   </span>
-                  <div className="text-lg font-bold">The Courtyard Stall</div>
+                  <div className="text-lg font-bold">Silangan, San Mateo, Rizal Stall</div>
                 </div>
                 <div className="text-right">
                   <span className="text-xl font-black tracking-tight text-amber-200">

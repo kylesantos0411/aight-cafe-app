@@ -30,7 +30,7 @@ export const AdminNfcView: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-[#7A695C] mt-1">
-              Program NTAG213 stickers and print QR standees for your physical popup stall at The Courtyard.
+              Program NTAG213 stickers and print QR standees for your physical popup stall at Silangan, San Mateo, Rizal.
             </p>
           </div>
 

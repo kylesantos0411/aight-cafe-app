@@ -96,7 +96,7 @@ export const CustomerMenuView: React.FC = () => {
             <div className="flex items-center gap-2.5">
               <span className="text-base">⚡</span>
               <div>
-                <span className="font-bold">Stall Tap Active:</span> Welcome to Aight Cafe popup! Customize your fresh coffee for pickup at The Courtyard.
+                <span className="font-bold">Stall Tap Active:</span> Welcome to Aight Cafe popup! Customize your fresh coffee for pickup at Silangan, San Mateo, Rizal.
               </div>
             </div>
             <button
@@ -115,7 +115,7 @@ export const CustomerMenuView: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
             Open until 6 PM
           </div>
-          <span className="text-[#8C7A6D] text-xs font-medium">Pickup only · The Courtyard</span>
+          <span className="text-[#8C7A6D] text-xs font-medium">Pickup only · Silangan, San Mateo, Rizal</span>
         </div>
 
         {/* Hero Section */}
@@ -125,7 +125,7 @@ export const CustomerMenuView: React.FC = () => {
           </h1>
           <p className="text-xs sm:text-sm text-[#7A695C] mt-2.5 flex items-center gap-1.5 font-medium">
             <span>📍</span>
-            Aight popup · The Courtyard, Manila
+            Aight popup · Silangan, San Mateo, Rizal
           </p>
         </div>
 
@@ -208,7 +208,7 @@ export const CustomerMenuView: React.FC = () => {
         {/* Clean Customer Footer */}
         <footer className="mt-12 pt-6 border-t border-[#ECE5DC] flex flex-wrap items-center justify-between gap-3 text-xs text-[#8C7A6D]">
           <div>
-            <span className="font-bold text-[#221611]">Aight Cafe</span> · The Courtyard · All orders for pickup only
+            <span className="font-bold text-[#221611]">Aight Cafe</span> · Silangan, San Mateo, Rizal · All orders for pickup only
           </div>
           <div className="flex items-center gap-4">
             <Link to="/account/orders" className="hover:text-[#221611] transition-colors underline-offset-2 hover:underline">

@@ -96,7 +96,7 @@ class AuthService {
     // Local development fallback only when Supabase is not connected
     if (email.trim().length > 0 && password.length >= 4) {
       const staffUser: StaffUser = {
-        id: 'staff_mia_courtyard',
+        id: 'staff_mia_silangan',
         email,
         fullName: email.split('@')[0].toUpperCase(),
         role: 'barista',

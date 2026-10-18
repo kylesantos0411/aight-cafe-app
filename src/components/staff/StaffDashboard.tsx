@@ -58,7 +58,7 @@ export const StaffDashboard: React.FC = () => {
               <span className="text-sm font-semibold text-[#544337] ml-2">Pickup management</span>
             </div>
             <p className="text-xs text-[#7A695C] mt-1">
-              Today · 9:41 AM · The Courtyard Branch · Station 1
+              Today · 9:41 AM · Silangan, San Mateo, Rizal Branch · Station 1
             </p>
           </div>
 
