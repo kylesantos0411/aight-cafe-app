@@ -32,3 +32,4 @@ figma_extracted
 *.njsproj
 *.sln
 *.sw?
+supabase/.temp/

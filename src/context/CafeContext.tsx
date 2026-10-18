@@ -7,11 +7,14 @@ import type {
   AppViewMode,
   CustomerScreenMode,
   PublicQueueItem,
+  QueueCard,
+  RefundRecord,
 } from '../types/cafe';
 import { INITIAL_MENU_ITEMS, INITIAL_ORDERS } from '../data/mockMenu';
 import { orderService } from '../services/orderService';
 import { authService } from '../services/authService';
 import { realtimeHub } from '../services/realtimeService';
+import { queueCardService } from '../services/queueCardService';
 
 interface CafeContextType {
   // Navigation & View
@@ -47,6 +50,35 @@ interface CafeContextType {
   updateOrderStatus: (orderId: string, status: OrderStatus, reason?: string) => Promise<Order>;
   verifyCashPayment: (orderId: string) => Promise<Order>;
   refreshOrders: () => Promise<void>;
+
+  // Cashier POS & 20 Physical Queue Cards
+  queueCards: import('../types/cafe').QueueCard[];
+  refreshCards: () => Promise<import('../types/cafe').QueueCard[]>;
+  createDraftOrder: (
+    items: CartItem[],
+    options?: {
+      customerName?: string;
+      phone?: string;
+      orderType?: 'takeout' | 'dine-in';
+      notes?: string;
+      expiresInMinutes?: number;
+    }
+  ) => Promise<Order>;
+  confirmPosPaymentAndAllocateCard: (
+    orderId: string,
+    paymentMethod: 'Cash at Counter' | 'GCash' | 'cash' | 'gcash' | 'cash_at_pickup',
+    amountReceived: number
+  ) => Promise<{ order: Order; queueNumber: string; card: import('../types/cafe').QueueCard; receipt: import('../types/cafe').ReceiptSnapshot }>;
+  releaseHeldCard: (cardNumber: number, reason: string) => Promise<import('../types/cafe').QueueCard>;
+  recordOrderRefund: (params: {
+    orderId: string;
+    cardNumber?: number;
+    amount: number;
+    refundMethod: 'cash' | 'gcash' | 'original_method';
+    authorizingManagerName: string;
+    reason: string;
+    notes?: string;
+  }) => Promise<import('../types/cafe').RefundRecord>;
 
   // Public Queue
   publicQueue: PublicQueueItem[];
@@ -94,6 +126,21 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [activeOrder, setActiveOrderState] = useState<Order | null>(null);
   const [publicQueue, setPublicQueue] = useState<PublicQueueItem[]>([]);
+  const [queueCards, setQueueCards] = useState<QueueCard[]>(() => queueCardService.getStoredCards());
+
+  const refreshCards = useCallback(async (): Promise<QueueCard[]> => {
+    try {
+      const cards = await queueCardService.getAllCards();
+      setQueueCards(cards);
+      return cards;
+    } catch {
+      return queueCardService.getStoredCards();
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshCards();
+  }, [refreshCards]);
 
   // Cart state
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -379,6 +426,59 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setPublicQueue(queue);
   };
 
+  const createDraftOrder = async (
+    items: CartItem[],
+    options?: {
+      customerName?: string;
+      phone?: string;
+      orderType?: 'takeout' | 'dine-in';
+      notes?: string;
+      expiresInMinutes?: number;
+    }
+  ): Promise<Order> => {
+    const draft = await orderService.createDraftOrder(items, options, staffUser || undefined, menuItems);
+    await refreshOrders();
+    return draft;
+  };
+
+  const confirmPosPaymentAndAllocateCard = async (
+    orderId: string,
+    paymentMethod: 'Cash at Counter' | 'GCash' | 'cash' | 'gcash' | 'cash_at_pickup',
+    amountReceived: number
+  ) => {
+    const res = await orderService.confirmPosPaymentAndAllocateCard(
+      orderId,
+      paymentMethod,
+      amountReceived,
+      staffUser || undefined
+    );
+    await Promise.all([refreshOrders(), refreshCards()]);
+    return res;
+  };
+
+  const releaseHeldCard = async (cardNumber: number, reason: string): Promise<QueueCard> => {
+    const card = await orderService.releaseHeldCard(cardNumber, reason, staffUser?.id);
+    await Promise.all([refreshOrders(), refreshCards()]);
+    return card;
+  };
+
+  const recordOrderRefund = async (params: {
+    orderId: string;
+    cardNumber?: number;
+    amount: number;
+    refundMethod: 'cash' | 'gcash' | 'original_method';
+    authorizingManagerName: string;
+    reason: string;
+    notes?: string;
+  }): Promise<RefundRecord> => {
+    const rec = await orderService.recordOrderRefund({
+      ...params,
+      authorizingManagerId: staffUser?.id,
+    });
+    await refreshOrders();
+    return rec;
+  };
+
   return (
     <CafeContext.Provider
       value={{
@@ -404,6 +504,12 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateOrderStatus,
         verifyCashPayment,
         refreshOrders,
+        queueCards,
+        refreshCards,
+        createDraftOrder,
+        confirmPosPaymentAndAllocateCard,
+        releaseHeldCard,
+        recordOrderRefund,
         publicQueue,
         customerUser,
         refreshCustomer,

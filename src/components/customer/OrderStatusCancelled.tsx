@@ -3,27 +3,27 @@ import { useCafe } from '../../context/CafeContext';
 import type { Order } from '../../types/cafe';
 import { XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 
+const defaultCancelledOrder: Order = {
+  id: 'ord_108',
+  requestReference: 'R-6B3',
+  code: 'A037',
+  privateToken: 'token_sample_james_a037',
+  customerName: 'Dan',
+  orderType: 'takeout',
+  items: [
+    { id: '1', menuItemId: 'm3', name: 'Iced Americano', price: 140, quantity: 1, image: '', size: 'Large', sweetness: 'Less sweet' },
+  ],
+  subtotal: 140,
+  totalAmount: 140,
+  paymentMethod: 'Card',
+  paymentStatus: 'refunded',
+  status: 'cancelled',
+  cancellationReason: 'Espresso machine maintenance calibration. Customer notified.',
+  createdAt: '2026-10-18T00:00:00.000Z',
+};
+
 export const OrderStatusCancelled: React.FC = () => {
   const { setCustomerScreen, orders } = useCafe();
-
-  const defaultCancelledOrder: Order = {
-    id: 'ord_108',
-    requestReference: 'R-6B3',
-    code: 'A037',
-    privateToken: 'token_sample_james_a037',
-    customerName: 'Dan',
-    orderType: 'takeout',
-    items: [
-      { id: '1', menuItemId: 'm3', name: 'Iced Americano', price: 140, quantity: 1, image: '', size: 'Large', sweetness: 'Less sweet' },
-    ],
-    subtotal: 140,
-    totalAmount: 140,
-    paymentMethod: 'Card',
-    paymentStatus: 'refunded',
-    status: 'cancelled',
-    cancellationReason: 'Espresso machine maintenance calibration. Customer notified.',
-    createdAt: new Date().toISOString(),
-  };
 
   const cancelledOrder = orders.find(o => o.code === 'A037') || defaultCancelledOrder;
 

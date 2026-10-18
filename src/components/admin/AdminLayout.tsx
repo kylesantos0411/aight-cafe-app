@@ -48,6 +48,10 @@ export const AdminLayout: React.FC<Props> = ({ children, title = 'Staff Portal',
 
           {/* Navigation Links */}
           <nav className="flex items-center gap-1.5 sm:gap-2">
+            <NavLink to="/admin/pos" className={navLinkClass}>
+              <span>🏪</span>
+              <span>POS</span>
+            </NavLink>
             <NavLink to="/admin/orders" className={navLinkClass}>
               <span>📋</span>
               <span>Orders</span>

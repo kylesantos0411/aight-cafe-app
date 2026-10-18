@@ -12,17 +12,15 @@ export const CustomerMenuView: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<'Coffee' | 'Non-Coffee' | 'Matcha' | 'Pastries'>('Coffee');
   const [loading, setLoading] = useState(true);
-  const [showNfcBanner, setShowNfcBanner] = useState(false);
+  const isNfcSource = searchParams.get('source') === 'nfc' || searchParams.get('source') === 'qr' || searchParams.get('tag') === 'order';
+  const [showNfcBanner, setShowNfcBanner] = useState(isNfcSource);
 
   useEffect(() => {
-    const source = searchParams.get('source');
-    const tag = searchParams.get('tag');
-
-    if (source === 'nfc' || source === 'qr' || tag === 'order') {
-      setShowNfcBanner(true);
+    if (isNfcSource) {
+      const source = searchParams.get('source');
       nfcAnalyticsService.logTap('order', source === 'qr' ? 'qr' : 'nfc', window.location.pathname);
     }
-  }, [searchParams]);
+  }, [isNfcSource, searchParams]);
 
   useEffect(() => {
     menuService.getMenu().then(items => {

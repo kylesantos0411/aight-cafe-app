@@ -13,10 +13,12 @@ import { CustomerRegisterView } from './views/CustomerRegisterView';
 import { ReorderView } from './views/ReorderView';
 import { TrackOrderView } from './views/TrackOrderView';
 import { CustomerRewardsView } from './views/CustomerRewardsView';
+import { CustomerCardTrackerView } from './views/CustomerCardTrackerView';
 
 // Staff / Admin Route Views & Route Guard
 import { AdminLoginView } from './views/AdminLoginView';
 import { AdminOrdersView } from './views/StaffOrdersView';
+import { AdminPosView } from './views/AdminPosView';
 import { AdminMenuView } from './views/AdminMenuView';
 import { AdminHistoryView } from './views/AdminHistoryView';
 import { AdminNfcView } from './views/AdminNfcView';
@@ -46,10 +48,20 @@ export default function App() {
               <Route path="/register" element={<CustomerRegisterView />} />
               <Route path="/account" element={<CustomerAccountView />} />
               <Route path="/account/orders" element={<CustomerAccountView />} />
+              <Route path="/card/:cardId" element={<CustomerCardTrackerView />} />
+              <Route path="/queue-card/:cardId" element={<CustomerCardTrackerView />} />
 
               {/* 2. Staff / Admin Routes (Role-Protected) */}
               <Route path="/admin/login" element={<AdminLoginView />} />
-              <Route path="/admin" element={<Navigate to="/admin/orders" replace />} />
+              <Route path="/admin" element={<Navigate to="/admin/pos" replace />} />
+              <Route
+                path="/admin/pos"
+                element={
+                  <AdminRouteGuard>
+                    <AdminPosView />
+                  </AdminRouteGuard>
+                }
+              />
               <Route
                 path="/admin/orders"
                 element={

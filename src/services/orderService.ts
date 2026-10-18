@@ -1,9 +1,11 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import type { Order, CartItem, OrderStatus, PublicQueueItem, MenuItem } from '../types/cafe';
+import type { Order, CartItem, OrderStatus, PublicQueueItem, MenuItem, QueueCard, ReceiptSnapshot, RefundRecord } from '../types/cafe';
 import { INITIAL_MENU_ITEMS, INITIAL_ORDERS } from '../data/mockMenu';
 import { calculateAuthoritativeOrderTotal } from './orderCalculator';
 import { realtimeHub } from './realtimeService';
 import { loyaltyService } from './loyaltyService';
+import { queueCardService } from './queueCardService';
+import { refundService } from './refundService';
 
 const STORAGE_ORDERS_KEY = 'aight_cafe_orders_v2';
 const STORAGE_QUEUE_SEQ_KEY = 'aight_cafe_queue_seq';
@@ -173,6 +175,247 @@ class OrderRepository {
   }
 
   /**
+   * Cashier POS: Create a draft order.
+   * Unpaid drafts do NOT reserve a physical card or enter preparation queue.
+   */
+  public async createDraftOrder(
+    items: CartItem[],
+    options: {
+      customerName?: string;
+      phone?: string;
+      orderType?: 'takeout' | 'dine-in';
+      notes?: string;
+      expiresInMinutes?: number;
+    } = {},
+    staffUser?: { id: string; fullName: string },
+    menuCatalog: MenuItem[] = INITIAL_MENU_ITEMS
+  ): Promise<Order> {
+    const { subtotal, totalAmount, verifiedItems } = calculateAuthoritativeOrderTotal(items, menuCatalog);
+    const generateUUID = () => (typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+          const r = (Math.random() * 16) | 0;
+          const v = c === 'x' ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        }));
+
+    const orderId = generateUUID();
+    const shortRef = `R-${Math.random().toString(16).substring(2, 6).toUpperCase()}`;
+    const token = generateUUID();
+    const expiryMinutes = options.expiresInMinutes || 15;
+    const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
+
+    const draftOrder: Order = {
+      id: orderId,
+      requestReference: shortRef,
+      code: shortRef,
+      queueNumber: null,
+      cardNumber: null,
+      cardId: null,
+      isCardReleased: true,
+      draftExpiresAt: expiresAt,
+      privateToken: token,
+      customerName: options.customerName?.trim() || 'Counter Guest',
+      phone: options.phone?.trim() || undefined,
+      orderType: options.orderType || 'takeout',
+      items: verifiedItems,
+      subtotal,
+      totalAmount,
+      paymentMethod: 'Cash at Counter',
+      paymentStatus: 'unpaid',
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+      notes: options.notes,
+      cashierId: staffUser?.id,
+      cashierName: staffUser?.fullName,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('orders').insert({
+          id: draftOrder.id,
+          request_reference: draftOrder.requestReference,
+          private_token: draftOrder.privateToken,
+          customer_name: draftOrder.customerName,
+          phone: draftOrder.phone,
+          order_type: draftOrder.orderType,
+          payment_method: 'Cash at Counter',
+          payment_status: 'unpaid',
+          status: 'draft',
+          subtotal: draftOrder.subtotal,
+          total_amount: draftOrder.totalAmount,
+          notes: draftOrder.notes,
+          draft_expires_at: draftOrder.draftExpiresAt,
+          cashier_name: draftOrder.cashierName,
+        });
+      } catch (err) {
+        console.warn('Supabase draft order insert note:', err);
+      }
+    }
+
+    const orders = this.getStoredOrders();
+    this.saveOrders([draftOrder, ...orders]);
+    realtimeHub.notifyOrderUpdated(draftOrder);
+    return draftOrder;
+  }
+
+  /**
+   * Scans and expires abandoned drafts after their configurable duration.
+   * Retains audit history by marking status cancelled with explanation.
+   */
+  public expireAbandonedDrafts(): number {
+    const orders = this.getStoredOrders();
+    const now = new Date();
+    let expiredCount = 0;
+    const updated = orders.map(o => {
+      if (o.status === 'draft' && o.draftExpiresAt && new Date(o.draftExpiresAt) < now) {
+        expiredCount++;
+        return {
+          ...o,
+          status: 'cancelled' as OrderStatus,
+          cancellationReason: 'Draft expired automatically (abandoned)',
+        };
+      }
+      return o;
+    });
+    if (expiredCount > 0) {
+      this.saveOrders(updated);
+    }
+    return expiredCount;
+  }
+
+  /**
+   * Cashier POS: Confirm payment (Cash or GCash manual confirmation)
+   * and atomically allocate an available queue card (1 to 20).
+   * Transitions order to 'preparing'.
+   */
+  public async confirmPosPaymentAndAllocateCard(
+    orderIdOrParams:
+      | string
+      | {
+          orderId: string;
+          paymentMethod: 'Cash at Counter' | 'GCash' | 'cash' | 'gcash' | 'cash_at_pickup';
+          amountReceived: number;
+          changeGiven?: number;
+          paymentProofRef?: string;
+          staffUser?: { id: string; fullName: string };
+        },
+    paymentMethodArg?: 'Cash at Counter' | 'GCash' | 'cash' | 'gcash' | 'cash_at_pickup',
+    amountReceivedArg?: number,
+    staffUserArg?: { id: string; fullName: string }
+  ): Promise<Order & { order: Order; queueNumber: string; card: QueueCard; receipt: ReceiptSnapshot }> {
+    const isObject = typeof orderIdOrParams === 'object';
+    const orderId = isObject ? orderIdOrParams.orderId : orderIdOrParams;
+    const paymentMethod = isObject ? orderIdOrParams.paymentMethod : paymentMethodArg!;
+    const amountReceived = isObject ? orderIdOrParams.amountReceived : amountReceivedArg!;
+    const staffUser = isObject ? orderIdOrParams.staffUser : staffUserArg;
+    const changeGiven = isObject ? orderIdOrParams.changeGiven : undefined;
+    const paymentProofRef = isObject ? orderIdOrParams.paymentProofRef : undefined;
+
+    const { order, orderIndex, orders } = await this.findOrFetchOrder(orderId);
+
+    if (order.status !== 'draft' && order.status !== 'pending') {
+      throw new Error(`Order cannot be confirmed from status '${order.status}'. Only draft or pending orders can be confirmed.`);
+    }
+
+    if (amountReceived < order.totalAmount) {
+      throw new Error(`Payment amount (₱${amountReceived}) is less than order total (₱${order.totalAmount}).`);
+    }
+
+    // Allocate card atomically (ensuring capacity of 20 physical cards)
+    const validStaffId = await this.resolveStaffId(staffUser?.id);
+    const { card, queueNumber } = await queueCardService.allocateCard(order.id, validStaffId || undefined);
+
+    // Build immutable receipt snapshot
+    const receiptSnapshot: ReceiptSnapshot = {
+      orderId: order.id,
+      requestReference: order.requestReference,
+      cardNumber: card.cardNumber,
+      cardId: card.cardId,
+      queueNumber,
+      customerName: order.customerName,
+      totalAmount: order.totalAmount,
+      subtotal: order.subtotal,
+      paymentMethod,
+      paymentStatus: 'verified',
+      paidAt: new Date().toISOString(),
+      cashierName: staffUser?.fullName || 'Staff Cashier',
+      cashAmountReceived: paymentMethod.toLowerCase().includes('cash') ? amountReceived : undefined,
+      cashChangeGiven: paymentMethod.toLowerCase().includes('cash') ? (changeGiven ?? Math.max(0, amountReceived - order.totalAmount)) : undefined,
+      paymentProofRef: paymentProofRef || undefined,
+      items: order.items.map(it => ({
+        name: it.name,
+        quantity: it.quantity,
+        unitPrice: it.price,
+        itemTotal: it.price * it.quantity,
+        customization: it.notes || (it.customizations ? it.customizations.map(c => `${c.groupName}: ${c.itemName}`).join(', ') : null),
+      })),
+    };
+
+    const updatedOrder: Order = {
+      ...order,
+      status: 'preparing',
+      paymentMethod,
+      paymentStatus: 'verified',
+      cashAmountReceived: receiptSnapshot.cashAmountReceived,
+      cashChangeGiven: receiptSnapshot.cashChangeGiven,
+      paymentProofRef: paymentProofRef || order.paymentProofRef,
+      queueNumber,
+      code: queueNumber,
+      cardNumber: card.cardNumber,
+      cardId: card.cardId,
+      isCardReleased: false,
+      receiptSnapshot,
+      startedAt: new Date().toISOString(),
+      acceptedAt: new Date().toISOString(),
+      cashierId: staffUser?.id || order.cashierId,
+      cashierName: staffUser?.fullName || order.cashierName,
+    };
+
+    orders[orderIndex] = updatedOrder;
+    this.saveOrders(orders);
+
+    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id)) {
+      try {
+        await supabase.rpc('fn_pos_confirm_payment_and_allocate_card', {
+          p_order_id: order.id,
+          p_payment_method: paymentMethod,
+          p_amount_received: amountReceived,
+          p_staff_id: validStaffId,
+        });
+      } catch (err) {
+        try {
+          await supabase.from('orders').update({
+            status: 'preparing',
+            payment_method: paymentMethod,
+            payment_status: 'verified',
+            pickup_number: queueNumber,
+            card_number: card.cardNumber,
+            card_id: card.cardId,
+            is_card_released: false,
+            receipt_snapshot: receiptSnapshot,
+            started_at: updatedOrder.startedAt,
+            cash_verified_at: new Date().toISOString(),
+            cash_amount_received: amountReceived,
+          }).eq('id', order.id);
+        } catch (e) {
+          console.warn('Direct order pos confirmation note:', e);
+        }
+      }
+    }
+
+    realtimeHub.notifyOrderUpdated(updatedOrder);
+    realtimeHub.notifyQueueUpdated();
+    return {
+      ...updatedOrder,
+      order: updatedOrder,
+      queueNumber,
+      card,
+      receipt: receiptSnapshot,
+    };
+  }
+
+  /**
    * Internal helper to find an order in local memory or fetch it directly from Supabase.
    * Eliminates "Order not found" when staff actions on orders created on another device.
    */
@@ -223,6 +466,18 @@ class OrderRepository {
     }
 
     throw new Error(`Order ${orderId} not found.`);
+  }
+
+  /**
+   * Retrieves an order by ID or reference, returning null if not found.
+   */
+  public async getOrderById(orderId: string): Promise<Order | null> {
+    try {
+      const { order } = await this.findOrFetchOrder(orderId);
+      return order;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -375,9 +630,34 @@ class OrderRepository {
   ): Promise<Order> {
     const { order, orderIndex, orders } = await this.findOrFetchOrder(orderId);
 
+    // HARD SECURITY GATE: Order in terminal state (completed/cancelled) cannot be reopened or transitioned
+    if (order.status === 'completed' || order.status === 'cancelled') {
+      throw new Error(`Cannot modify order ${order.id}. Order is in terminal state '${order.status}'.`);
+    }
+
     // HARD SECURITY GATE: Order can NEVER be completed unless cash payment has been verified
     if (nextStatus === 'completed' && order.paymentStatus !== 'verified') {
       throw new Error('Cash payment must be verified before completing order.');
+    }
+
+    if (nextStatus === 'cancelled') {
+      if (!reason || !reason.trim()) {
+        throw new Error('A cancellation reason is strictly required.');
+      }
+    }
+
+    const validStaffId = await this.resolveStaffId(staffId);
+
+    // Card Lifecycle Automation:
+    // Completed orders release card automatically
+    // Cancelled orders hold card for physical recovery (do NOT release automatically)
+    let isCardReleased = order.isCardReleased ?? true;
+    if (nextStatus === 'completed' && order.cardNumber) {
+      await queueCardService.releaseCardOnCompletion(order.cardNumber, validStaffId || undefined);
+      isCardReleased = true;
+    } else if (nextStatus === 'cancelled' && order.cardNumber) {
+      await queueCardService.holdCardOnCancellation(order.cardNumber, reason || 'Cancelled by manager', validStaffId || undefined);
+      isCardReleased = false;
     }
 
     const updatedOrder: Order = {
@@ -386,9 +666,8 @@ class OrderRepository {
       paymentStatus: nextStatus === 'cancelled' ? 'voided' : order.paymentStatus,
       cancellationReason: reason || order.cancellationReason,
       completedAt: nextStatus === 'completed' ? new Date().toISOString() : order.completedAt,
+      isCardReleased,
     };
-
-    const validStaffId = await this.resolveStaffId(staffId);
 
     if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(order.id)) {
       let rpcSuccess = false;
@@ -420,6 +699,7 @@ class OrderRepository {
               payment_status: nextStatus === 'cancelled' ? 'voided' : order.paymentStatus,
               cancellation_reason: reason || order.cancellationReason,
               completed_at: nextStatus === 'completed' ? new Date().toISOString() : null,
+              is_card_released: isCardReleased,
             })
             .eq('id', order.id);
         } catch (err) {
@@ -440,6 +720,45 @@ class OrderRepository {
     }
 
     return updatedOrder;
+  }
+
+  /**
+   * Explicit Manager Action: Releases a physically recovered queue card.
+   */
+  public async releaseHeldCard(cardNumber: number, reason: string, staffId?: string): Promise<QueueCard> {
+    const validStaffId = await this.resolveStaffId(staffId);
+    const card = await queueCardService.releaseHeldCard(cardNumber, validStaffId || undefined, reason);
+
+    const orders = this.getStoredOrders();
+    const updated = orders.map(o => (o.cardNumber === cardNumber && !o.isCardReleased ? { ...o, isCardReleased: true } : o));
+    this.saveOrders(updated);
+    realtimeHub.notifyQueueUpdated();
+    return card;
+  }
+
+  /**
+   * Manager Action: Record an authorized refund for an order.
+   */
+  public async recordOrderRefund(params: {
+    orderId: string;
+    cardNumber?: number;
+    amount: number;
+    refundMethod: 'cash' | 'gcash' | 'original_method';
+    authorizingManagerId?: string;
+    authorizingManagerName?: string;
+    authorizedBy?: string;
+    reason: string;
+    notes?: string;
+  }): Promise<RefundRecord> {
+    const { order, orderIndex, orders } = await this.findOrFetchOrder(params.orderId);
+    const record = await refundService.recordRefund(params);
+    orders[orderIndex] = {
+      ...order,
+      paymentStatus: 'refunded',
+    };
+    this.saveOrders(orders);
+    realtimeHub.notifyOrderUpdated(orders[orderIndex]);
+    return record;
   }
 
   /**
@@ -504,6 +823,13 @@ class OrderRepository {
       requestReference: d.request_reference || `R-${d.id.substring(0, 4).toUpperCase()}`,
       code: d.pickup_number || d.request_reference || 'A001',
       queueNumber: d.pickup_number || null,
+      cardNumber: d.card_number || null,
+      cardId: d.card_id || null,
+      isCardReleased: d.is_card_released ?? true,
+      draftExpiresAt: d.draft_expires_at || null,
+      receiptSnapshot: d.receipt_snapshot || null,
+      cashierId: d.cashier_id || null,
+      cashierName: d.cashier_name || null,
       privateToken: d.private_token,
       customerId: d.customer_id,
       customerName: d.customer_name || 'Customer',
@@ -526,6 +852,8 @@ class OrderRepository {
       status: d.status || 'pending',
       createdAt: d.created_at || new Date().toISOString(),
       acceptedAt: d.accepted_at,
+      startedAt: d.started_at,
+      readyAt: d.ready_at,
       completedAt: d.completed_at,
       estimatedMinutes: d.estimated_minutes || 10,
       cancellationReason: d.cancellation_reason,

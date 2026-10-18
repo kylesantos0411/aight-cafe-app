@@ -7,6 +7,8 @@ import { menuService } from '../services/menuService';
 import { nfcAnalyticsService } from '../services/nfcAnalyticsService';
 import type { Order, CartItem, CustomerUser } from '../types/cafe';
 
+const generateReorderId = () => `reorder_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
 export const ReorderView: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -76,7 +78,7 @@ export const ReorderView: React.FC = () => {
           ...item,
           menuItemId: product.id,
           price: currentPrice,
-          id: `reorder_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          id: generateReorderId(),
         });
       }
 

@@ -20,16 +20,16 @@ interface Props {
 }
 
 export const ItemCustomizerModal: React.FC<Props> = ({ item, onClose, onAddToCart }) => {
-  if (!item) return null;
-
   const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState(item.options?.sizes?.[0]?.name || '');
-  const [selectedMilk, setSelectedMilk] = useState(item.options?.milks?.[0]?.name || '');
-  const [selectedSweetness, setSelectedSweetness] = useState(item.options?.sweetness?.[0] || '');
+  const [selectedSize, setSelectedSize] = useState(item?.options?.sizes?.[0]?.name || '');
+  const [selectedMilk, setSelectedMilk] = useState(item?.options?.milks?.[0]?.name || '');
+  const [selectedSweetness, setSelectedSweetness] = useState(item?.options?.sweetness?.[0] || '');
   const [selectedTemp, setSelectedTemp] = useState<'Hot' | 'Iced'>(
-    item.options?.temperatures?.[0] || 'Iced'
+    item?.options?.temperatures?.[0] || 'Iced'
   );
   const [notes, setNotes] = useState('');
+
+  if (!item) return null;
 
   // Calculate base price + options
   const sizeExtra = item.options?.sizes?.find(s => s.name === selectedSize)?.price || 0;

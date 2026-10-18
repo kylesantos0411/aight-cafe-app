@@ -38,7 +38,7 @@ export const Screen05Pending: React.FC<Props> = ({ order, onSimulateAccept }) =>
     if (effectiveOrder && effectiveOrder.status !== 'pending' && onSimulateAccept) {
       onSimulateAccept();
     }
-  }, [effectiveOrder?.status, onSimulateAccept]);
+  }, [effectiveOrder, onSimulateAccept]);
 
   return (
     <div className="w-full max-w-xl mx-auto bg-[#FAF8F5] text-[#221611] rounded-3xl p-6 sm:p-8 flex flex-col shadow-xs border border-[#EAE3DA] font-sans relative select-none">

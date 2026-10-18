@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { NFC_TAGS, getNfcTagUrl, getQrCodeImageUrl, getAuthoritativeBaseUrl, type NfcTagConfig } from '../config/nfcConfig';
 import { AdminLayout } from '../components/admin/AdminLayout';
+import { useCafe } from '../context/CafeContext';
 
 export const AdminNfcView: React.FC = () => {
+  const { queueCards, releaseHeldCard } = useCafe();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const baseUrl = getAuthoritativeBaseUrl();
 
@@ -135,6 +137,90 @@ export const AdminNfcView: React.FC = () => {
           })}
         </div>
 
+        {/* ======================================================== */}
+        {/* 20 REUSABLE PHYSICAL QUEUE CARDS SECTION                */}
+        {/* ======================================================== */}
+        <div className="pt-4 border-t border-[#ECE5DC] space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-black text-[#221611]">20 Physical Reusable Queue Cards</h2>
+                <span className="text-[10px] font-bold bg-[#ECE5DC] text-[#7A695C] px-2.5 py-0.5 rounded-full uppercase">
+                  Cards 01 – 20
+                </span>
+              </div>
+              <p className="text-xs text-[#7A695C] mt-0.5">
+                Each physical queue card has a permanent URL and QR code. Customers tap or scan to track their order live.
+              </p>
+            </div>
+            <div className="text-xs bg-white px-3 py-1.5 rounded-xl border border-[#DFD6CC] text-[#7A695C]">
+              Format: <code className="font-mono text-[#221611]">{baseUrl}/card/:number</code>
+            </div>
+          </div>
+
+          {/* Cards Grid (20 cards) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+            {Array.from({ length: 20 }, (_, i) => i + 1).map(num => {
+              const padded = num < 10 ? `0${num}` : `${num}`;
+              const cardUrl = `${baseUrl}/card/${num}`;
+              const qrUrl = getQrCodeImageUrl(cardUrl, 200);
+              const cardStatus = queueCards.find(c => c.cardNumber === num)?.status || 'available';
+
+              return (
+                <div
+                  key={num}
+                  className="bg-white rounded-2xl p-3 border border-[#ECE5DC] shadow-2xs flex flex-col justify-between space-y-2 hover:border-[#DFD6CC] transition-all"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-black text-sm text-[#221611]">
+                      Card #{padded}
+                    </span>
+                    <span
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ${
+                        cardStatus === 'available'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          : cardStatus === 'occupied'
+                          ? 'bg-purple-50 text-purple-800 border border-purple-200'
+                          : 'bg-rose-50 text-rose-800 border border-rose-200'
+                      }`}
+                    >
+                      {cardStatus === 'held_for_recovery' ? 'Held' : cardStatus}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-center py-1">
+                    <img
+                      src={qrUrl}
+                      alt={`Card ${padded} QR`}
+                      className="w-16 h-16 rounded-lg border border-[#ECE5DC] p-0.5 bg-white shadow-2xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1 text-center">
+                    <a
+                      href={`/card/${num}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-block py-1 bg-[#FAF8F5] border border-[#DFD6CC] hover:bg-[#F2EDE4] text-[#221611] rounded-lg text-[10px] font-bold transition-colors"
+                    >
+                      Open Live ↗
+                    </a>
+
+                    {cardStatus === 'held_for_recovery' && (
+                      <button
+                        onClick={() => releaseHeldCard(num, 'Physically recovered by manager')}
+                        className="w-full py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                      >
+                        Release Card
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* How to Encode Physical Tags Guide */}
         <div className="p-6 bg-white rounded-3xl border border-[#ECE5DC] shadow-xs space-y-3 text-xs">
           <h2 className="font-bold text-sm text-[#221611] flex items-center gap-2">
@@ -144,9 +230,9 @@ export const AdminNfcView: React.FC = () => {
           <ol className="list-decimal list-inside space-y-1.5 text-[#69584B] leading-relaxed">
             <li>Download the free <strong>NFC Tools</strong> app on your iPhone or Android phone.</li>
             <li>Tap <strong>Write</strong> → <strong>Add a record</strong> → <strong>URL / URI</strong>.</li>
-            <li>Paste the exact NFC URL copied above (e.g. <code>{getNfcTagUrl('order', 'nfc')}</code>).</li>
-            <li>Tap <strong>Write / 144 Bytes</strong> and hold the back of your phone to your blank NTAG213 sticker.</li>
-            <li>Stall sticker is immediately programmed and opens in Safari / Chrome with zero installation required!</li>
+            <li>Paste the exact NFC URL copied above (e.g. <code>{baseUrl}/card/1</code>).</li>
+            <li>Tap <strong>Write / 144 Bytes</strong> and hold the back of your phone to your blank NTAG213 sticker on physical queue card #1.</li>
+            <li>Card is immediately programmed and opens in Safari / Chrome with zero installation required!</li>
           </ol>
         </div>
       </div>

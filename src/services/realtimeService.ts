@@ -99,6 +99,10 @@ class RealtimeHub {
     }
   }
 
+  public notifyQueueUpdated() {
+    this.notifyQueueChanged();
+  }
+
   public subscribeToOrders(callback: OrderUpdateCallback): () => void {
     this.orderListeners.add(callback);
     return () => {

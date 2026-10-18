@@ -9,6 +9,9 @@ interface Props {
   onSignOut?: () => void;
 }
 
+const formatTodayDate = () =>
+  new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+
 export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSignOut }) => {
   const navigate = useNavigate();
   const {
@@ -18,6 +21,8 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
     verifyCashPayment,
     staffUser,
     resetDailyQueueAndOrders,
+    releaseHeldCard,
+    recordOrderRefund,
   } = useCafe();
 
   const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'cancelled'>('active');
@@ -32,6 +37,13 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
   const [customVoidReason, setCustomVoidReason] = useState<string>('');
   const [isVoiding, setIsVoiding] = useState<boolean>(false);
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
+
+  // Refund Dialog State
+  const [refundingOrder, setRefundingOrder] = useState<Order | null>(null);
+  const [refundAmount, setRefundAmount] = useState<string>('');
+  const [refundMethod, setRefundMethod] = useState<'cash' | 'gcash'>('cash');
+  const [refundReason, setRefundReason] = useState<string>('Customer requested cancellation');
+  const [isRefunding, setIsRefunding] = useState<boolean>(false);
 
   // Daily Close & Reset Modal State
   const [showDailyCloseModal, setShowDailyCloseModal] = useState<boolean>(false);
@@ -69,6 +81,8 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
 
   const getStatusPill = (status: OrderStatus) => {
     switch (status) {
+      case 'draft':
+        return { label: 'Draft', badgeClass: 'bg-zinc-100 text-zinc-600 border-zinc-200', dotClass: 'bg-zinc-400' };
       case 'pending':
         return { label: 'Pending acceptance', badgeClass: 'bg-amber-50 text-amber-800 border-amber-200', dotClass: 'bg-amber-600' };
       case 'confirmed':
@@ -81,6 +95,8 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
         return { label: 'Completed', badgeClass: 'bg-zinc-100 text-zinc-700 border-zinc-200', dotClass: 'bg-zinc-400' };
       case 'cancelled':
         return { label: 'Voided / Cancelled', badgeClass: 'bg-rose-50 text-rose-800 border-rose-200', dotClass: 'bg-rose-600' };
+      default:
+        return { label: 'Unknown', badgeClass: 'bg-zinc-100 text-zinc-600 border-zinc-200', dotClass: 'bg-zinc-400' };
     }
   };
 
@@ -128,6 +144,27 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
       alert(err.message || 'Failed to void order.');
     } finally {
       setIsVoiding(false);
+    }
+  };
+
+  const handleConfirmRefund = async () => {
+    if (!refundingOrder || isRefunding) return;
+    setIsRefunding(true);
+    try {
+      await recordOrderRefund({
+        orderId: refundingOrder.id,
+        cardNumber: refundingOrder.cardNumber || undefined,
+        amount: parseFloat(refundAmount) || refundingOrder.totalAmount,
+        refundMethod,
+        authorizingManagerName: staffUser?.fullName || 'Store Manager',
+        reason: refundReason,
+      });
+      showNotice(`Refund of ₱${refundAmount || refundingOrder.totalAmount} recorded.`);
+      setRefundingOrder(null);
+    } catch (err: any) {
+      alert(err.message || 'Failed to record refund.');
+    } finally {
+      setIsRefunding(false);
     }
   };
 
@@ -734,13 +771,49 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
                         <span className="text-rose-700 ml-2 italic">— {ord.cancellationReason}</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2.5">
                       <span className="font-bold text-[#221611]">₱{ord.totalAmount}</span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                         ord.status === 'completed' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
                       }`}>
                         {ord.status}
                       </span>
+
+                      {/* Card Release Button if Card Held */}
+                      {ord.status === 'cancelled' && ord.cardNumber && !ord.isCardReleased && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await releaseHeldCard(ord.cardNumber!, 'Physical card recovered by manager');
+                              showNotice(`Card #${ord.cardNumber} released for reuse.`);
+                            } catch (e: any) {
+                              alert(e.message);
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
+                          title="Confirm physical recovery and release card for reuse"
+                        >
+                          Release Card #{ord.cardNumber}
+                        </button>
+                      )}
+
+                      {/* Record Refund Button if Cancelled and not refunded */}
+                      {ord.status === 'cancelled' && ord.paymentStatus !== 'refunded' && (
+                        <button
+                          onClick={() => {
+                            setRefundingOrder(ord);
+                            setRefundAmount(ord.totalAmount.toString());
+                          }}
+                          className="px-2.5 py-1 bg-white border border-[#DFD6CC] hover:bg-[#F2EDE4] text-[#221611] rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
+                        >
+                          Refund
+                        </button>
+                      )}
+                      {ord.paymentStatus === 'refunded' && (
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                          Refunded
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -848,7 +921,7 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
                   <h3 className="font-black text-lg text-[#221611]">End-of-Day Close & Daily Reset</h3>
                 </div>
                 <p className="text-xs text-[#8C7A6D] mt-0.5">
-                  Silangan, San Mateo, Rizal · {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
+                  Silangan, San Mateo, Rizal · {formatTodayDate()}
                 </p>
               </div>
               <button
@@ -997,6 +1070,105 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
                 })()}
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 3. RECORD REFUND MODAL                                   */}
+      {/* ======================================================== */}
+      {refundingOrder && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#ECE5DC] space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between pb-3 border-b border-[#ECE5DC]">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">💸</span>
+                <h3 className="font-bold text-base text-[#221611]">Record Order Refund</h3>
+              </div>
+              <button
+                onClick={() => setRefundingOrder(null)}
+                className="w-7 h-7 rounded-full bg-[#F2EDE4] hover:bg-[#EAE2D7] text-[#7A695C] text-xs flex items-center justify-center font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 bg-[#FAF8F5] border border-[#DFD6CC] rounded-2xl text-xs space-y-1">
+              <div className="font-bold text-[#221611]">
+                Order {refundingOrder.code || refundingOrder.requestReference} · {refundingOrder.customerName}
+              </div>
+              <div className="text-[11px] text-[#7A695C]">
+                Total paid: <strong>₱{refundingOrder.totalAmount}</strong> via {refundingOrder.paymentMethod}
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-[#8C7A6D] block mb-1">Refund Amount (₱)</label>
+                <input
+                  type="number"
+                  value={refundAmount}
+                  onChange={e => setRefundAmount(e.target.value)}
+                  className="w-full bg-[#FAF8F5] border border-[#DFD6CC] rounded-xl p-2.5 font-mono font-bold text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-[#8C7A6D] block mb-1">Refund Method</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRefundMethod('cash')}
+                    className={`p-2 rounded-xl border text-xs font-bold transition-all ${
+                      refundMethod === 'cash' ? 'bg-[#221611] text-white border-[#221611]' : 'border-[#DFD6CC] text-[#7A695C]'
+                    }`}
+                  >
+                    Cash Tendered
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRefundMethod('gcash')}
+                    className={`p-2 rounded-xl border text-xs font-bold transition-all ${
+                      refundMethod === 'gcash' ? 'bg-blue-600 text-white border-blue-600' : 'border-[#DFD6CC] text-[#7A695C]'
+                    }`}
+                  >
+                    GCash Transfer
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-[#8C7A6D] block mb-1">Refund Reason</label>
+                <input
+                  type="text"
+                  value={refundReason}
+                  onChange={e => setRefundReason(e.target.value)}
+                  className="w-full bg-[#FAF8F5] border border-[#DFD6CC] rounded-xl p-2.5 text-xs text-[#221611]"
+                />
+              </div>
+
+              <div className="text-[10px] text-[#8C7A6D]">
+                Authorized By: <strong>{staffUser?.fullName || 'Store Manager'}</strong>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-[#ECE5DC]">
+              <button
+                type="button"
+                onClick={() => setRefundingOrder(null)}
+                className="flex-1 py-2.5 border border-[#DFD6CC] hover:bg-[#FAF8F5] text-[#6E5D50] rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isRefunding}
+                onClick={handleConfirmRefund}
+                className="flex-1 py-2.5 bg-[#221611] hover:bg-[#36251E] disabled:bg-zinc-400 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+              >
+                {isRefunding ? 'Recording...' : 'Confirm Refund'}
+              </button>
+            </div>
           </div>
         </div>
       )}
