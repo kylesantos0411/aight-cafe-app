@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useCafe } from '../context/CafeContext';
 import { menuService } from '../services/menuService';
 import { nfcAnalyticsService } from '../services/nfcAnalyticsService';
 import type { MenuItem } from '../types/cafe';
@@ -8,12 +7,10 @@ import type { MenuItem } from '../types/cafe';
 export const CustomerMenuView: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { cartCount } = useCafe();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<'Coffee' | 'Non-Coffee' | 'Matcha' | 'Pastries'>('Coffee');
   const [loading, setLoading] = useState(true);
   const isNfcSource = searchParams.get('source') === 'nfc' || searchParams.get('source') === 'qr' || searchParams.get('tag') === 'order';
-  const [showNfcBanner, setShowNfcBanner] = useState(isNfcSource);
 
   useEffect(() => {
     if (isNfcSource) {
@@ -36,6 +33,19 @@ export const CustomerMenuView: React.FC = () => {
     if (activeCategory === 'Pastries') return item.category === 'Pastries';
     return true;
   });
+
+  const [quickCardNum, setQuickCardNum] = useState('');
+
+  const handleTrackCard = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const parsed = parseInt(quickCardNum.trim(), 10);
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= 20) {
+      const padded = parsed < 10 ? `0${parsed}` : `${parsed}`;
+      navigate(`/card/card_${padded}`);
+    } else {
+      navigate('/track');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#221611] font-sans flex flex-col selection:bg-[#221611] selection:text-[#FAF8F5]">
@@ -74,38 +84,62 @@ export const CustomerMenuView: React.FC = () => {
             </Link>
 
             <button
-              onClick={() => navigate('/cart')}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-[#DFD6CC] flex items-center justify-center text-[#5C4A3E] relative hover:bg-[#F2EDE4] active:scale-95 transition-all shadow-xs cursor-pointer"
-              title="View Cart"
+              onClick={() => navigate('/track')}
+              className="px-3.5 py-1.5 rounded-full bg-[#221611] text-[#FAF8F5] text-xs font-bold hover:bg-[#3D2D23] active:scale-95 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              title="Track Queue Card"
             >
-              <span className="text-base">👜</span>
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#221611] text-white text-[10px] font-bold flex items-center justify-center shadow-sm">
-                  {cartCount}
-                </span>
-              )}
+              <span>🏷️</span>
+              <span>Track Card</span>
             </button>
           </div>
         </header>
 
-        {/* NFC / QR Tap Welcome Banner */}
-        {showNfcBanner && (
-          <div className="mt-4 p-3.5 bg-[#221611] text-[#FAF8F5] rounded-2xl flex items-center justify-between shadow-md text-xs transition-all animate-fade-in">
-            <div className="flex items-center gap-2.5">
-              <span className="text-base">⚡</span>
-              <div>
-                <span className="font-bold">Stall Tap Active:</span> Welcome to Aight Cafe popup! Customize your fresh coffee for pickup at Silangan, San Mateo, Rizal.
-              </div>
+        {/* Counter Ordering Notice Banner */}
+        <div className="mt-4 p-4 bg-[#221611] text-[#FAF8F5] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md text-xs transition-all">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <span className="text-xl">🏪</span>
+            <div>
+              <span className="font-bold">Counter Ordering Only · Silangan, San Mateo, Rizal:</span>
+              <p className="text-[11px] text-[#D8CDC1] mt-0.5">
+                Place and pay for orders with our cashier at the stall. You will receive an NFC/QR Queue Card (1–20) to track your drink live.
+              </p>
             </div>
-            <button
-              onClick={() => setShowNfcBanner(false)}
-              className="text-[#DFD6CC] hover:text-white p-1 text-sm font-bold cursor-pointer"
-              title="Dismiss"
-            >
-              ✕
-            </button>
           </div>
-        )}
+          <button
+            onClick={() => navigate('/queue')}
+            className="text-xs font-bold text-[#E8DED3] hover:text-white underline underline-offset-2 whitespace-nowrap self-end sm:self-center"
+          >
+            Live TV Queue →
+          </button>
+        </div>
+
+        {/* Quick Queue Card Lookup Bar */}
+        <div className="mt-4 p-3.5 bg-white rounded-2xl border border-[#ECE5DC] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-base">🏷️</span>
+            <div>
+              <span className="font-bold text-[#221611]">Already have a physical Queue Card?</span>
+              <span className="text-[#8C7A6D] hidden md:inline"> Enter card # (1–20) to track preparation and download receipt:</span>
+            </div>
+          </div>
+          <form onSubmit={handleTrackCard} className="flex items-center gap-2">
+            <input
+              type="number"
+              min="1"
+              max="20"
+              value={quickCardNum}
+              onChange={e => setQuickCardNum(e.target.value)}
+              placeholder="Card # (1–20)"
+              className="w-28 px-3 py-1.5 text-xs font-bold bg-[#FAF8F5] rounded-xl border border-[#DFD6CC] text-[#221611] focus:outline-hidden focus:ring-1 focus:ring-[#221611]"
+            />
+            <button
+              type="submit"
+              className="px-3.5 py-1.5 bg-[#523E32] hover:bg-[#3D2D23] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            >
+              Track Card
+            </button>
+          </form>
+        </div>
 
         {/* Store Status & Announcement Banner */}
         <div className="flex flex-wrap items-center justify-between gap-2 mt-4 text-xs font-medium">
@@ -179,8 +213,9 @@ export const CustomerMenuView: React.FC = () => {
                     </div>
                     <div className="mt-3 pt-2.5 border-t border-[#F2ECE3] flex items-center justify-between">
                       <span className="font-extrabold text-sm text-[#221611]">₱{item.price}</span>
-                      <span className="w-6 h-6 rounded-full bg-[#FAF8F5] border border-[#DFD6CC] text-[#221611] text-xs font-bold flex items-center justify-center group-hover:bg-[#221611] group-hover:text-white transition-colors">
-                        +
+                      <span className="px-2.5 py-1 rounded-full bg-[#FAF8F5] border border-[#DFD6CC] text-[#221611] text-[11px] font-bold flex items-center gap-1 group-hover:bg-[#221611] group-hover:text-white transition-colors">
+                        <span>Options</span>
+                        <span className="text-[10px]">→</span>
                       </span>
                     </div>
                   </div>
@@ -189,19 +224,6 @@ export const CustomerMenuView: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Floating Cart Pill if cart has items */}
-        {cartCount > 0 && (
-          <div className="sticky bottom-6 mt-8 z-20 max-w-md mx-auto w-full">
-            <button
-              onClick={() => navigate('/cart')}
-              className="w-full py-4 px-6 bg-[#221611] hover:bg-[#36251E] text-white rounded-2xl font-bold text-sm shadow-xl flex items-center justify-between transition-transform active:scale-[0.99] cursor-pointer"
-            >
-              <span>View Cart ({cartCount} {cartCount === 1 ? 'item' : 'items'})</span>
-              <span className="flex items-center gap-1">Proceed to Checkout →</span>
-            </button>
-          </div>
-        )}
 
         {/* Clean Customer Footer */}
         <footer className="mt-12 pt-6 border-t border-[#ECE5DC] flex flex-wrap items-center justify-between gap-3 text-xs text-[#8C7A6D]">

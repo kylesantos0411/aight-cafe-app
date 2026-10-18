@@ -1,13 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useCafe } from '../context/CafeContext';
 import { INITIAL_MENU_ITEMS } from '../data/mockMenu';
 import { calculateAuthoritativeItemPrice } from '../services/orderCalculator';
 
 export const CustomerCustomizeView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart, cartCount } = useCafe();
 
   const product = useMemo(() => {
     return INITIAL_MENU_ITEMS.find(m => m.id === id) || INITIAL_MENU_ITEMS[0];
@@ -30,20 +28,10 @@ export const CustomerCustomizeView: React.FC = () => {
     });
   }, [product, size, milk, sweetness, extraShot, quantity]);
 
-  const handleAddToCart = () => {
-    addToCart({
-      menuItemId: product.id,
-      name: product.name,
-      price: priceResult.unitPrice,
-      basePrice: product.price,
-      quantity,
-      image: product.image,
-      size,
-      milk,
-      sweetness,
-      extraShot,
-    });
-    navigate('/cart');
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+
+  const handleOrderNotice = () => {
+    setOrderModalOpen(true);
   };
 
   return (
@@ -58,18 +46,14 @@ export const CustomerCustomizeView: React.FC = () => {
             <span>←</span>
             <span>Back to menu</span>
           </button>
-          <span className="font-bold text-sm text-[#7A695C]">Customize your drink</span>
+          <span className="font-bold text-sm text-[#7A695C]">Options & Pricing Preview</span>
           <button
-            onClick={() => navigate('/cart')}
-            className="w-8 h-8 rounded-full border border-[#DFD6CC] flex items-center justify-center text-[#5C4A3E] relative hover:bg-[#F2EDE4] transition-all"
-            title="Cart"
+            onClick={() => navigate('/track')}
+            className="px-3 py-1 rounded-full bg-[#FAF8F5] border border-[#DFD6CC] text-[#221611] text-xs font-bold hover:bg-[#F2EDE4] transition-all flex items-center gap-1 cursor-pointer"
+            title="Track Queue Card"
           >
-            <span className="text-sm">👜</span>
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#221611] text-white text-[9px] font-bold flex items-center justify-center">
-                {cartCount}
-              </span>
-            )}
+            <span>🏷️</span>
+            <span>Track Card</span>
           </button>
         </header>
 
@@ -234,16 +218,74 @@ export const CustomerCustomizeView: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Add to Cart Button */}
-        <div className="sticky bottom-6 mt-8 z-20">
+        {/* Counter Ordering Notice Box */}
+        <div className="mt-6 p-4 bg-white rounded-2xl border border-[#ECE5DC] shadow-xs flex items-start gap-3">
+          <span className="text-xl">🏪</span>
+          <div className="text-xs">
+            <span className="font-bold text-[#221611]">Counter Ordering at Silangan, San Mateo, Rizal</span>
+            <p className="text-[#7A695C] mt-0.5 leading-relaxed">
+              Tell our barista these selections when ordering at the stall counter. After payment (Cash or GCash), you'll receive an NFC/QR Queue Card to track preparation live.
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom Order at Counter Action */}
+        <div className="sticky bottom-6 mt-8 z-20 flex gap-3">
           <button
-            onClick={handleAddToCart}
-            className="w-full py-4 px-6 bg-[#221611] hover:bg-[#36251E] text-[#FAF8F5] rounded-2xl font-bold text-sm transition-transform active:scale-[0.99] flex items-center justify-between shadow-xl cursor-pointer"
+            onClick={() => navigate('/')}
+            className="py-4 px-5 bg-white border border-[#DFD6CC] hover:bg-[#FAF8F5] text-[#221611] rounded-2xl font-bold text-xs transition-colors cursor-pointer"
           >
-            <span>Add to Cart ({quantity})</span>
+            ← Menu
+          </button>
+          <button
+            onClick={handleOrderNotice}
+            className="flex-1 py-4 px-6 bg-[#221611] hover:bg-[#36251E] text-[#FAF8F5] rounded-2xl font-bold text-sm transition-transform active:scale-[0.99] flex items-center justify-between shadow-xl cursor-pointer"
+          >
+            <span>Order at Counter ({quantity})</span>
             <span className="font-extrabold text-base">₱{priceResult.totalPrice}</span>
           </button>
         </div>
+
+        {/* Order Guidance Modal */}
+        {orderModalOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div className="bg-[#FAF8F5] text-[#221611] rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-[#ECE5DC] space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#221611] text-white flex items-center justify-center text-2xl mx-auto">
+                ☕
+              </div>
+              <div className="text-center">
+                <h3 className="font-black text-lg text-[#221611]">Order at Stall Counter</h3>
+                <p className="text-xs text-[#7A695C] mt-1 leading-relaxed">
+                  Please step up to our stall counter in <strong>Silangan, San Mateo, Rizal</strong> to place and pay for your drink:
+                </p>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-2xl border border-[#ECE5DC] text-xs space-y-1">
+                <div className="font-bold text-[#221611]">{quantity}× {product.name}</div>
+                <div className="text-[#8C7A6D]">{priceResult.details.join(' · ')}</div>
+                <div className="pt-2 border-t border-[#F2ECE3] flex justify-between font-extrabold text-sm text-[#221611]">
+                  <span>Total</span>
+                  <span>₱{priceResult.totalPrice}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => navigate('/')}
+                  className="w-full py-3 bg-[#221611] text-white rounded-xl text-xs font-bold hover:bg-[#3D2D23] transition-colors cursor-pointer"
+                >
+                  Return to Menu
+                </button>
+                <button
+                  onClick={() => setOrderModalOpen(false)}
+                  className="w-full py-2.5 text-xs font-semibold text-[#8C7A6D] hover:text-[#221611] cursor-pointer"
+                >
+                  Continue Browsing Details
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useCafe } from '../context/CafeContext';
 import { authService } from '../services/authService';
 import { orderService } from '../services/orderService';
 import { menuService } from '../services/menuService';
@@ -12,7 +11,6 @@ const generateReorderId = () => `reorder_${Date.now()}_${Math.random().toString(
 export const ReorderView: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { addToCart, clearCart } = useCafe();
 
   const [customer, setCustomer] = useState<CustomerUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +46,12 @@ export const ReorderView: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const [selectedReorder, setSelectedReorder] = useState<{
+    order: Order;
+    validItems: CartItem[];
+    unavailableNames: string[];
+  } | null>(null);
 
   // Handle reorder action with authoritative revalidation
   const handleReorder = async (pastOrder: Order) => {
@@ -88,22 +92,13 @@ export const ReorderView: React.FC = () => {
         return;
       }
 
-      // Add to cart
-      clearCart();
-      validItemsToAdd.forEach(it => addToCart(it));
-
-      if (unavailableNames.length > 0) {
-        // Give customer clear warning
-        setReorderNotice(
-          `Added available items to your cart. Note: ${unavailableNames.join(', ')} is currently sold out and was omitted.`
-        );
-      }
-
-      // Navigate to cart for customer confirmation
-      setTimeout(() => {
-        navigate('/cart');
-      }, unavailableNames.length > 0 ? 1400 : 300);
-
+      // Display counter reorder modal
+      setSelectedReorder({
+        order: pastOrder,
+        validItems: validItemsToAdd,
+        unavailableNames,
+      });
+      setReorderingId(null);
     } catch (err: any) {
       setReorderNotice(err.message || 'Failed to revalidate items. Please try ordering from the menu.');
       setReorderingId(null);
@@ -249,6 +244,69 @@ export const ReorderView: React.FC = () => {
             ← Back to Menu
           </Link>
         </div>
+
+        {/* Counter Reorder Summary Modal */}
+        {selectedReorder && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div className="bg-[#FAF8F5] text-[#221611] rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-[#ECE5DC] space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#221611] text-white flex items-center justify-center text-2xl mx-auto">
+                ☕
+              </div>
+              <div className="text-center">
+                <h3 className="font-black text-lg text-[#221611]">Order at Stall Counter</h3>
+                <p className="text-xs text-[#7A695C] mt-1 leading-relaxed">
+                  Show this to our cashier at <strong>Silangan, San Mateo, Rizal</strong> to reorder your usual:
+                </p>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-[#ECE5DC] text-xs space-y-2">
+                <div className="space-y-1.5 divide-y divide-[#F2ECE3]">
+                  {selectedReorder.validItems.map((it, idx) => (
+                    <div key={idx} className="pt-1.5 first:pt-0 flex justify-between items-start">
+                      <div>
+                        <div className="font-bold text-[#221611]">{it.quantity}× {it.name}</div>
+                        {(it.size || it.milk || it.sweetness) && (
+                          <div className="text-[11px] text-[#8C7A6D]">
+                            {[it.size, it.milk, it.sweetness ? `${it.sweetness} sweet` : ''].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                      </div>
+                      <span className="font-bold text-[#221611]">₱{it.price * it.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {selectedReorder.unavailableNames.length > 0 && (
+                  <div className="p-2 bg-amber-50 text-amber-800 rounded-xl text-[11px]">
+                    Note: {selectedReorder.unavailableNames.join(', ')} currently sold out.
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-[#ECE5DC] flex justify-between font-extrabold text-sm text-[#221611]">
+                  <span>Estimated Total</span>
+                  <span>
+                    ₱{selectedReorder.validItems.reduce((acc, it) => acc + it.price * it.quantity, 0)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => setSelectedReorder(null)}
+                  className="w-full py-3 bg-[#221611] text-white rounded-xl text-xs font-bold hover:bg-[#3D2D23] transition-colors cursor-pointer"
+                >
+                  Close & Order at Counter
+                </button>
+                <button
+                  onClick={() => navigate('/')}
+                  className="w-full py-2.5 text-xs font-semibold text-[#8C7A6D] hover:text-[#221611] cursor-pointer"
+                >
+                  View Full Menu
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

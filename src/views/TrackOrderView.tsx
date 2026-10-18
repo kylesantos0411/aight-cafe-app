@@ -71,12 +71,21 @@ export const TrackOrderView: React.FC = () => {
     setIsSearching(true);
     setSearchError(null);
 
+    // If query is a card number 1-20 (e.g. "4", "04", "card_4", "card 4")
+    const cardMatch = searchQuery.trim().match(/^(?:card\s*#?)?0*([1-9]|1[0-9]|20)$/i);
+    if (cardMatch) {
+      const num = parseInt(cardMatch[1], 10);
+      const padded = num < 10 ? `0${num}` : `${num}`;
+      navigate(`/card/card_${padded}`);
+      return;
+    }
+
     try {
       const found = await orderService.findOrderForTracking(searchQuery.trim());
       if (found && found.privateToken) {
         navigate(`/order/${found.privateToken}`);
       } else {
-        setSearchError(`No order matching "${searchQuery}" was found. Please check your pickup ticket or code.`);
+        setSearchError(`No order matching "${searchQuery}" was found. Please check your pickup card or code.`);
       }
     } catch (err: any) {
       setSearchError(err.message || 'Lookup failed. Please verify your reference.');
