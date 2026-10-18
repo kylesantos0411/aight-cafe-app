@@ -10,12 +10,16 @@ import { CustomerOrderTrackerView } from './views/CustomerOrderTrackerView';
 import { CustomerAccountView } from './views/CustomerAccountView';
 import { CustomerLoginView } from './views/CustomerLoginView';
 import { CustomerRegisterView } from './views/CustomerRegisterView';
+import { ReorderView } from './views/ReorderView';
+import { TrackOrderView } from './views/TrackOrderView';
+import { CustomerRewardsView } from './views/CustomerRewardsView';
 
 // Staff / Admin Route Views & Route Guard
 import { AdminLoginView } from './views/AdminLoginView';
 import { AdminOrdersView } from './views/StaffOrdersView';
 import { AdminMenuView } from './views/AdminMenuView';
 import { AdminHistoryView } from './views/AdminHistoryView';
+import { AdminNfcView } from './views/AdminNfcView';
 import { AdminRouteGuard } from './components/auth/AdminRouteGuard';
 
 // Standalone Public Stall Queue Display (TV/Monitor)
@@ -30,10 +34,14 @@ export default function App() {
             <Routes>
               {/* 1. Customer Routes */}
               <Route path="/" element={<CustomerMenuView />} />
+              <Route path="/menu" element={<CustomerMenuView />} />
               <Route path="/customize/:id" element={<CustomerCustomizeView />} />
               <Route path="/cart" element={<CustomerCartView />} />
               <Route path="/checkout" element={<CustomerCheckoutView />} />
               <Route path="/order/:token" element={<CustomerOrderTrackerView />} />
+              <Route path="/reorder" element={<ReorderView />} />
+              <Route path="/track" element={<TrackOrderView />} />
+              <Route path="/rewards" element={<CustomerRewardsView />} />
               <Route path="/login" element={<CustomerLoginView />} />
               <Route path="/register" element={<CustomerRegisterView />} />
               <Route path="/account" element={<CustomerAccountView />} />
@@ -63,6 +71,14 @@ export default function App() {
                 element={
                   <AdminRouteGuard>
                     <AdminHistoryView />
+                  </AdminRouteGuard>
+                }
+              />
+              <Route
+                path="/admin/nfc"
+                element={
+                  <AdminRouteGuard>
+                    <AdminNfcView />
                   </AdminRouteGuard>
                 }
               />

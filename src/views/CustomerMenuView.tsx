@@ -1,15 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useCafe } from '../context/CafeContext';
 import { menuService } from '../services/menuService';
+import { nfcAnalyticsService } from '../services/nfcAnalyticsService';
 import type { MenuItem } from '../types/cafe';
 
 export const CustomerMenuView: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { cartCount } = useCafe();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<'Coffee' | 'Non-Coffee' | 'Matcha' | 'Pastries'>('Coffee');
   const [loading, setLoading] = useState(true);
+  const [showNfcBanner, setShowNfcBanner] = useState(false);
+
+  useEffect(() => {
+    const source = searchParams.get('source');
+    const tag = searchParams.get('tag');
+
+    if (source === 'nfc' || source === 'qr' || tag === 'order') {
+      setShowNfcBanner(true);
+      nfcAnalyticsService.logTap('order', source === 'qr' ? 'qr' : 'nfc', window.location.pathname);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     menuService.getMenu().then(items => {
@@ -41,6 +54,21 @@ export const CustomerMenuView: React.FC = () => {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
+              to="/reorder"
+              className="text-xs font-semibold text-[#8C7A6D] hover:text-[#221611] bg-[#F0EDE8] hover:bg-[#E8E2DA] px-3 py-1.5 rounded-full transition-colors hidden sm:inline-block"
+            >
+              Reorder
+            </Link>
+
+            <Link
+              to="/rewards"
+              className="text-xs font-semibold text-[#8C7A6D] hover:text-[#221611] bg-[#F0EDE8] hover:bg-[#E8E2DA] px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+            >
+              <span>☕</span>
+              <span>Rewards</span>
+            </Link>
+
+            <Link
               to="/account/orders"
               className="text-xs font-semibold text-[#8C7A6D] hover:text-[#221611] bg-[#F0EDE8] hover:bg-[#E8E2DA] px-3.5 py-1.5 rounded-full transition-colors"
             >
@@ -61,6 +89,25 @@ export const CustomerMenuView: React.FC = () => {
             </button>
           </div>
         </header>
+
+        {/* NFC / QR Tap Welcome Banner */}
+        {showNfcBanner && (
+          <div className="mt-4 p-3.5 bg-[#221611] text-[#FAF8F5] rounded-2xl flex items-center justify-between shadow-md text-xs transition-all animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <span className="text-base">⚡</span>
+              <div>
+                <span className="font-bold">Stall Tap Active:</span> Welcome to Aight Cafe popup! Customize your fresh coffee for pickup at The Courtyard.
+              </div>
+            </div>
+            <button
+              onClick={() => setShowNfcBanner(false)}
+              className="text-[#DFD6CC] hover:text-white p-1 text-sm font-bold cursor-pointer"
+              title="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Store Status & Announcement Banner */}
         <div className="flex flex-wrap items-center justify-between gap-2 mt-4 text-xs font-medium">

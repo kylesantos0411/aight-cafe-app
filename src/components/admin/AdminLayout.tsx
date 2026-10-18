@@ -60,6 +60,10 @@ export const AdminLayout: React.FC<Props> = ({ children, title = 'Staff Portal',
               <span>📜</span>
               <span>History</span>
             </NavLink>
+            <NavLink to="/admin/nfc" className={navLinkClass}>
+              <span>🏷️</span>
+              <span>NFC Hub</span>
+            </NavLink>
             <button
               onClick={handleOpenQueueDisplay}
               className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#7A695C] hover:bg-[#F2EDE4] hover:text-[#221611] transition-colors"

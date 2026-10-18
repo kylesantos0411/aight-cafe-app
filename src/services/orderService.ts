@@ -3,6 +3,7 @@ import type { Order, CartItem, OrderStatus, PublicQueueItem, MenuItem } from '..
 import { INITIAL_MENU_ITEMS, INITIAL_ORDERS } from '../data/mockMenu';
 import { calculateAuthoritativeOrderTotal } from './orderCalculator';
 import { realtimeHub } from './realtimeService';
+import { loyaltyService } from './loyaltyService';
 
 const STORAGE_ORDERS_KEY = 'aight_cafe_orders_v2';
 const STORAGE_QUEUE_SEQ_KEY = 'aight_cafe_queue_seq';
@@ -287,7 +288,56 @@ class OrderRepository {
     orders[orderIndex] = updatedOrder;
     this.saveOrders(orders);
     realtimeHub.notifyOrderUpdated(updatedOrder);
+
+    // Credit loyalty stamps to registered customer if completed & verified
+    if (nextStatus === 'completed' && order.customerId) {
+      loyaltyService.awardLoyaltyForOrder(order.id).catch(err => {
+        console.debug('Loyalty stamp award notice:', err);
+      });
+    }
+
     return updatedOrder;
+  }
+
+  /**
+   * Fetch all orders placed by an authenticated customer.
+   */
+  public async getCustomerOrders(customerId: string): Promise<Order[]> {
+    const all = await this.getAllOrders();
+    return all.filter(o => o.customerId === customerId);
+  }
+
+  /**
+   * Fetch most recent active in-progress order for a customer.
+   */
+  public async getActiveCustomerOrder(customerId: string): Promise<Order | null> {
+    const orders = await this.getCustomerOrders(customerId);
+    const active = orders.find((o: Order) => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status));
+    return active || null;
+  }
+
+  /**
+   * Lookup order by token, request reference (e.g. R-8F2B), or pickup number (e.g. A042).
+   */
+  public async findOrderForTracking(query: string): Promise<Order | null> {
+    const trimmed = query.trim();
+    if (!trimmed) return null;
+
+    // 1. If UUID, direct token lookup
+    if (/^[0-9a-f-]{36}$/i.test(trimmed)) {
+      return this.getOrderByPrivateToken(trimmed);
+    }
+
+    // 2. Check stored orders by requestReference or code or queueNumber
+    const all = await this.getAllOrders();
+    const found = all.find(
+      o =>
+        o.privateToken === trimmed ||
+        o.requestReference.toLowerCase() === trimmed.toLowerCase() ||
+        o.code.toLowerCase() === trimmed.toLowerCase() ||
+        (o.queueNumber && o.queueNumber.toLowerCase() === trimmed.toLowerCase())
+    );
+    return found || null;
   }
 
   /**

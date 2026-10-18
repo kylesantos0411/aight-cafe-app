@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { authService } from '../services/authService';
 
 export const CustomerRegisterView: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const redirectTarget = searchParams.get('redirect');
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +26,8 @@ export const CustomerRegisterView: React.FC = () => {
 
     try {
       await authService.signUpCustomer(email, password, fullName.trim() || email.split('@')[0]);
-      navigate('/account/orders');
+      const safeTarget = redirectTarget && redirectTarget.startsWith('/') ? redirectTarget : '/account/orders';
+      navigate(safeTarget);
     } catch (err: any) {
       setError(err.message || 'Failed to register account.');
     } finally {

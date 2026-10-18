@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { authService } from '../services/authService';
 
 export const CustomerLoginView: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const redirectTarget = searchParams.get('redirect');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,7 +19,8 @@ export const CustomerLoginView: React.FC = () => {
 
     try {
       await authService.signInCustomer(email, password);
-      navigate('/account/orders');
+      const safeTarget = redirectTarget && redirectTarget.startsWith('/') ? redirectTarget : '/account/orders';
+      navigate(safeTarget);
     } catch (err: any) {
       setError(err.message || 'Failed to sign in. Please check your credentials.');
     } finally {
@@ -88,7 +92,10 @@ export const CustomerLoginView: React.FC = () => {
         <div className="pt-2 text-center text-xs text-[#8C7A6D] space-y-3">
           <p>
             Don't have an account?{' '}
-            <Link to="/register" className="font-bold text-[#221611] hover:underline">
+            <Link
+              to={redirectTarget ? `/register?redirect=${encodeURIComponent(redirectTarget)}` : '/register'}
+              className="font-bold text-[#221611] hover:underline"
+            >
               Create an account
             </Link>
           </p>

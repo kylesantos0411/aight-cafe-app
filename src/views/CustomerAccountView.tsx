@@ -75,6 +75,21 @@ export const CustomerAccountView: React.FC = () => {
               <p className="text-xs text-[#7A695C]">{customer.email}</p>
             </div>
 
+            {/* Loyalty Rewards Shortcut Card */}
+            <Link
+              to="/rewards"
+              className="p-4 bg-[#221611] text-[#FAF8F5] rounded-2xl flex items-center justify-between hover:bg-[#3D2D23] transition-colors shadow-sm"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xl">☕</span>
+                <div>
+                  <div className="font-bold text-xs">Aight Rewards Stamp Card</div>
+                  <div className="text-[11px] text-[#C7B9AC]">View your stamps balance & unlocked free coffee</div>
+                </div>
+              </div>
+              <span className="text-sm font-bold">→</span>
+            </Link>
+
             <div className="flex-1">
               <h3 className="font-bold text-sm text-[#221611] mb-3">Order History</h3>
               {orders.length === 0 ? (
