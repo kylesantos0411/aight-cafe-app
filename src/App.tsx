@@ -27,6 +27,9 @@ import { AdminRouteGuard } from './components/auth/AdminRouteGuard';
 // Standalone Public Stall Queue Display (TV/Monitor)
 import { PublicQueueView } from './views/PublicQueueView';
 
+// Stall Testing Studio
+import { StallTestSplitView } from './views/StallTestSplitView';
+
 export default function App() {
   return (
     <CafeProvider>
@@ -102,6 +105,10 @@ export default function App() {
 
               {/* 3. Standalone Public Stall TV Queue Display */}
               <Route path="/queue" element={<PublicQueueView />} />
+
+              {/* 4. Stall Testing Studio (POS + DISPLAY Queuing Side-by-Side) */}
+              <Route path="/test" element={<StallTestSplitView />} />
+              <Route path="/testing" element={<StallTestSplitView />} />
 
               {/* Catch-all fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
