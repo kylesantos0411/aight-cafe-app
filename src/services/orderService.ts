@@ -268,6 +268,7 @@ class OrderRepository {
     const updatedOrder: Order = {
       ...order,
       status: nextStatus,
+      paymentStatus: nextStatus === 'cancelled' ? 'voided' : order.paymentStatus,
       cancellationReason: reason || order.cancellationReason,
       completedAt: nextStatus === 'completed' ? new Date().toISOString() : order.completedAt,
     };
@@ -297,6 +298,59 @@ class OrderRepository {
     }
 
     return updatedOrder;
+  }
+
+  /**
+   * Resets daily queue sequence and archives/clears active orders for the next day.
+   */
+  public async resetDailyQueueAndOrders(): Promise<Order[]> {
+    try {
+      localStorage.setItem(STORAGE_QUEUE_SEQ_KEY, '0');
+    } catch {
+      // ignore
+    }
+
+    const orders = this.getStoredOrders();
+    const updatedOrders = orders.map(o => {
+      if (o.status === 'pending' || o.status === 'confirmed' || o.status === 'preparing' || o.status === 'ready') {
+        return {
+          ...o,
+          status: 'cancelled' as OrderStatus,
+          paymentStatus: 'voided' as const,
+          cancellationReason: 'Daily close auto-reset',
+        };
+      }
+      return o;
+    });
+
+    this.saveOrders(updatedOrders);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        await supabase
+          .from('daily_queue_sequences')
+          .upsert({
+            service_date: todayStr,
+            last_number: 0,
+            prefix: 'A',
+          });
+
+        await supabase
+          .from('orders')
+          .update({
+            status: 'cancelled',
+            payment_status: 'voided',
+            cancellation_reason: 'Daily close auto-reset',
+          })
+          .in('status', ['pending', 'confirmed', 'preparing', 'ready']);
+      } catch (err) {
+        console.warn('Supabase resetDailyQueueAndOrders sync note:', err);
+      }
+    }
+
+    realtimeHub.notifyQueueChanged();
+    return updatedOrders;
   }
 
   /**

@@ -60,7 +60,7 @@ export interface Order {
   subtotal: number;
   totalAmount: number;
   paymentMethod: 'cash_at_pickup' | 'Cash at Counter' | 'GCash' | 'Maya' | 'Card';
-  paymentStatus: 'unpaid' | 'verified' | 'paid' | 'refunded';
+  paymentStatus: 'unpaid' | 'verified' | 'paid' | 'refunded' | 'voided';
   status: OrderStatus;
   createdAt: string;            // ISO string
   acceptedAt?: string | null;

@@ -63,6 +63,9 @@ interface CafeContextType {
 
   // Reset to initial demo state
   resetDemoData: () => void;
+
+  // Daily Close & Next Day Reset
+  resetDailyQueueAndOrders: () => Promise<void>;
 }
 
 const CafeContext = createContext<CafeContextType | undefined>(undefined);
@@ -107,7 +110,7 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const queue = await orderService.getPublicQueue();
       setPublicQueue(queue);
 
-      // Restore active order from token if present, or fallback to A042
+      // Restore active order from token if present and valid
       const activeToken = localStorage.getItem(STORAGE_ACTIVE_TOKEN_KEY);
       if (activeToken) {
         const found = loaded.find(o => o.privateToken === activeToken);
@@ -117,8 +120,7 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       
-      const defaultOrder = loaded.find(o => o.code === 'A042') || loaded[0] || null;
-      setActiveOrderState(defaultOrder);
+      setActiveOrderState(null);
     } catch (err) {
       console.warn('Failed to load orders', err);
     }
@@ -331,6 +333,15 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem(STORAGE_ACTIVE_TOKEN_KEY);
   };
 
+  const resetDailyQueueAndOrders = async () => {
+    const updated = await orderService.resetDailyQueueAndOrders();
+    setOrders(updated);
+    setActiveOrderState(null);
+    localStorage.removeItem(STORAGE_ACTIVE_TOKEN_KEY);
+    const queue = await orderService.getPublicQueue();
+    setPublicQueue(queue);
+  };
+
   return (
     <CafeContext.Provider
       value={{
@@ -365,6 +376,7 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsOffline,
         toggleOffline,
         resetDemoData,
+        resetDailyQueueAndOrders,
       }}
     >
       {children}
