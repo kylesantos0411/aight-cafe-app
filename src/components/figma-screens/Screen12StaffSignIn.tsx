@@ -5,8 +5,8 @@ interface Props {
 }
 
 export const Screen12StaffSignIn: React.FC<Props> = ({ onSignIn }) => {
-  const [email, setEmail] = useState('mia@aight.cafe');
-  const [password, setPassword] = useState('••••••••••••');
+  const [email, setEmail] = useState('kylesantos0411@gmail.com');
+  const [password, setPassword] = useState('Kyl3$ant0s');
   const [showPassword, setShowPassword] = useState(false);
 
   return (

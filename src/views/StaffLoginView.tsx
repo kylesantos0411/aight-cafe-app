@@ -5,8 +5,8 @@ import { useCafe } from '../context/CafeContext';
 export const StaffLoginView: React.FC = () => {
   const navigate = useNavigate();
   const { loginStaff } = useCafe();
-  const [email, setEmail] = useState('mia@aight.cafe');
-  const [password, setPassword] = useState('barista2026');
+  const [email, setEmail] = useState('kylesantos0411@gmail.com');
+  const [password, setPassword] = useState('Kyl3$ant0s');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -67,7 +67,7 @@ export const StaffLoginView: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                placeholder="operator@aightcafe.ph"
+                placeholder="kylesantos0411@gmail.com"
                 className="w-full px-4 py-3 bg-white rounded-2xl border border-[#DFD6CC] text-xs font-medium text-[#221611] focus:outline-hidden focus:ring-1 focus:ring-[#221611]"
               />
             </div>

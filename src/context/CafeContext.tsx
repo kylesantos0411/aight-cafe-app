@@ -297,7 +297,7 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginStaff = async (emailOrPass: string, pass?: string): Promise<boolean> => {
     try {
-      const email = pass ? emailOrPass : 'mia@aight.cafe';
+      const email = pass ? emailOrPass : 'kylesantos0411@gmail.com';
       const password = pass ? pass : emailOrPass;
       const user = await authService.signInStaff(email, password);
       setStaffUser(user);
