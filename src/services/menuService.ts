@@ -78,6 +78,63 @@ export const menuService = {
     return INITIAL_MENU_ITEMS;
   },
 
+  async getAllProducts(): Promise<MenuItem[]> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: products, error } = await supabase
+          .from('products')
+          .select(`
+            id,
+            name,
+            slug,
+            description,
+            base_price,
+            image_url,
+            is_available,
+            categories ( name )
+          `)
+          .order('display_order', { ascending: true });
+
+        if (!error && products && products.length > 0) {
+          return products.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            category: p.categories?.name || 'Coffee',
+            price: parseFloat(p.base_price),
+            description: p.description || '',
+            image: p.image_url || '/figma-assets/iced-latte.jpg',
+            isAvailable: p.is_available,
+          }));
+        }
+      } catch (err) {
+        console.warn('Failed to load all products from Supabase:', err);
+      }
+    }
+    return INITIAL_MENU_ITEMS;
+  },
+
+  async toggleProductAvailability(productId: string, isAvailable: boolean): Promise<boolean> {
+    if (isSupabaseConfigured && supabase && /^[0-9a-f-]{36}$/i.test(productId)) {
+      try {
+        const { error } = await supabase
+          .from('products')
+          .update({ is_available: isAvailable, updated_at: new Date().toISOString() })
+          .eq('id', productId);
+        if (error) throw error;
+        return true;
+      } catch (err) {
+        console.warn('Failed to toggle product availability in Supabase:', err);
+      }
+    }
+
+    const item = INITIAL_MENU_ITEMS.find(m => m.id === productId);
+    if (item) {
+      item.isAvailable = isAvailable;
+      return true;
+    }
+    return false;
+  },
+
   async getProductById(id: string): Promise<MenuItem | null> {
     const menu = await this.getMenu();
     return menu.find(m => m.id === id || m.name.toLowerCase().replace(/\s+/g, '-') === id.toLowerCase()) || null;

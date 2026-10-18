@@ -1,9 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Screen14StallQueue } from '../components/figma-screens/Screen14StallQueue';
 
 export const PublicQueueView: React.FC = () => {
-  const navigate = useNavigate();
 
   const handleToggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -15,14 +13,12 @@ export const PublicQueueView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#221611] flex flex-col items-center justify-center p-4 md:p-8 font-sans select-none">
-      {/* Top control bar for TV Display Operators */}
+      {/* Discreet status bar for TV Display Operators */}
       <div className="w-full max-w-7xl flex justify-between items-center pb-3 text-xs text-[#C4B4A5]">
-        <button
-          onClick={() => navigate('/')}
-          className="hover:text-white transition-colors"
-        >
-          ← Return to Menu
-        </button>
+        <div className="flex items-center gap-2 font-medium">
+          <span className="font-bold text-white">aight . CAFE</span>
+          <span className="text-[#8C7A6D]">· Stall Pickup Queue</span>
+        </div>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>

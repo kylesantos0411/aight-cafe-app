@@ -178,11 +178,14 @@ export const CustomerAccountView: React.FC = () => {
           </form>
         )}
 
-        {/* Home indicator */}
-        <div className="h-4 flex items-center justify-center pt-4">
-          <div className="w-32 h-1 bg-[#221611]/30 rounded-full"></div>
+        {/* Footer */}
+        <div className="pt-6 text-center text-xs text-[#8C7A6D]">
+          <span>Aight Cafe · The Courtyard</span>
         </div>
       </div>
     </div>
   );
 };
+
+export { CustomerAccountView as CustomerOrdersHistoryView };
+

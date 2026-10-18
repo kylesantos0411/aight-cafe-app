@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCafe } from '../../context/CafeContext';
 
 interface Props {
@@ -7,7 +8,8 @@ interface Props {
 }
 
 export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSignOut }) => {
-  const { orders, acceptOrder, updateOrderStatus, verifyCashPayment } = useCafe();
+  const navigate = useNavigate();
+  const { orders, acceptOrder, updateOrderStatus, verifyCashPayment, staffUser } = useCafe();
   const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'cancelled'>('active');
   const [selectedOrderId, setSelectedOrderId] = useState<string>('ord_sample_a042');
   const [isCashReceived, setIsCashReceived] = useState(false);
@@ -88,45 +90,58 @@ export const Screen13StaffOrders: React.FC<Props> = ({ onOpenQueueDisplay, onSig
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="space-y-1.5 text-xs font-semibold">
-            <button className="w-full flex items-center gap-2 px-3 py-2 bg-white text-[#221611] rounded-xl shadow-xs border border-[#E5DDD2]">
-              <span>📋</span>
-              <span>Orders</span>
-            </button>
-            <button className="w-full flex items-center gap-2 px-3 py-2 text-[#7A695C] hover:bg-white/60 rounded-xl transition-colors">
-              <span>☕</span>
-              <span>Availability</span>
-            </button>
-            <button
-              onClick={onOpenQueueDisplay}
-              className="w-full flex items-center gap-2 px-3 py-2 text-[#7A695C] hover:bg-white/60 rounded-xl transition-colors"
-            >
-              <span>📺</span>
-              <span>Queue display</span>
-            </button>
-          </nav>
-        </div>
-
-        {/* User Info at Bottom */}
-        <div className="pt-4 border-t border-[#E5DDD2] space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#221611] text-white flex items-center justify-center font-bold text-xs">
-              M
-            </div>
-            <div className="text-[11px] leading-tight">
-              <div className="font-bold text-[#221611]">Mia</div>
-              <div className="text-[9px] text-[#8C7A6D]">Stall operator</div>
-            </div>
+            {/* Navigation Links */}
+            <nav className="space-y-1.5 text-xs font-semibold">
+              <button
+                onClick={() => navigate('/admin/orders')}
+                className="w-full flex items-center gap-2 px-3 py-2 bg-white text-[#221611] rounded-xl shadow-xs border border-[#E5DDD2] cursor-pointer"
+              >
+                <span>📋</span>
+                <span>Orders</span>
+              </button>
+              <button
+                onClick={() => navigate('/admin/menu')}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[#7A695C] hover:bg-white/60 rounded-xl transition-colors cursor-pointer"
+              >
+                <span>☕</span>
+                <span>Availability</span>
+              </button>
+              <button
+                onClick={() => navigate('/admin/history')}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[#7A695C] hover:bg-white/60 rounded-xl transition-colors cursor-pointer"
+              >
+                <span>📜</span>
+                <span>History</span>
+              </button>
+              <button
+                onClick={onOpenQueueDisplay}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[#7A695C] hover:bg-white/60 rounded-xl transition-colors cursor-pointer"
+              >
+                <span>📺</span>
+                <span>Queue display</span>
+              </button>
+            </nav>
           </div>
-          <button
-            onClick={onSignOut}
-            className="text-[11px] text-[#8C7A6D] hover:text-[#221611] font-medium"
-          >
-            Sign out
-          </button>
-        </div>
-      </aside>
+
+          {/* User Info at Bottom */}
+          <div className="pt-4 border-t border-[#E5DDD2] space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-[#221611] text-white flex items-center justify-center font-bold text-xs uppercase">
+                {staffUser?.fullName?.[0] || 'M'}
+              </div>
+              <div className="text-[11px] leading-tight">
+                <div className="font-bold text-[#221611]">{staffUser?.fullName || 'Mia'}</div>
+                <div className="text-[9px] text-[#8C7A6D] capitalize">{staffUser?.role?.replace('_', ' ') || 'Stall operator'}</div>
+              </div>
+            </div>
+            <button
+              onClick={onSignOut}
+              className="text-[11px] text-[#8C7A6D] hover:text-[#221611] font-medium cursor-pointer"
+            >
+              Sign out
+            </button>
+          </div>
+        </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 overflow-y-auto">

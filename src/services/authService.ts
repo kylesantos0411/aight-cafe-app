@@ -13,7 +13,10 @@ class AuthService {
     if (isSupabaseConfigured && supabase) {
       try {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) return null;
+        if (authError || !user) {
+          localStorage.removeItem(STAFF_LOCAL_KEY);
+          return null;
+        }
 
         const { data: roleData, error: roleError } = await supabase
           .from('staff_roles')
@@ -22,17 +25,21 @@ class AuthService {
           .single();
 
         if (roleError || !roleData || !roleData.active) {
+          localStorage.removeItem(STAFF_LOCAL_KEY);
           return null;
         }
 
-        return {
+        const staffUser: StaffUser = {
           id: user.id,
           email: user.email || '',
           fullName: roleData.display_name || user.user_metadata?.full_name || 'Staff Member',
           role: roleData.role,
         };
+        localStorage.setItem(STAFF_LOCAL_KEY, JSON.stringify(staffUser));
+        return staffUser;
       } catch (err) {
         console.warn('Error fetching Supabase staff session:', err);
+        return null;
       }
     }
 

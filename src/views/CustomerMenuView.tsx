@@ -41,22 +41,15 @@ export const CustomerMenuView: React.FC = () => {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
-              to="/queue"
-              className="hidden sm:inline-flex text-xs font-semibold text-[#8C7A6D] hover:text-[#221611] bg-[#F0EDE8] hover:bg-[#E8E2DA] px-3 py-1.5 rounded-full transition-colors"
+              to="/account/orders"
+              className="text-xs font-semibold text-[#8C7A6D] hover:text-[#221611] bg-[#F0EDE8] hover:bg-[#E8E2DA] px-3.5 py-1.5 rounded-full transition-colors"
             >
-              Pickup queue
-            </Link>
-
-            <Link
-              to="/staff/login"
-              className="text-xs font-bold text-[#8C7A6D] hover:text-[#221611] bg-[#F0EDE8] hover:bg-[#E8E2DA] px-3 py-1.5 rounded-full transition-colors"
-            >
-              Staff portal
+              My orders
             </Link>
 
             <button
               onClick={() => navigate('/cart')}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-[#DFD6CC] flex items-center justify-center text-[#5C4A3E] relative hover:bg-[#F2EDE4] active:scale-95 transition-all shadow-xs"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-[#DFD6CC] flex items-center justify-center text-[#5C4A3E] relative hover:bg-[#F2EDE4] active:scale-95 transition-all shadow-xs cursor-pointer"
               title="View Cart"
             >
               <span className="text-base">👜</span>
@@ -165,17 +158,17 @@ export const CustomerMenuView: React.FC = () => {
           </div>
         )}
 
-        {/* Clean Footer */}
+        {/* Clean Customer Footer */}
         <footer className="mt-12 pt-6 border-t border-[#ECE5DC] flex flex-wrap items-center justify-between gap-3 text-xs text-[#8C7A6D]">
           <div>
-            <span className="font-bold text-[#221611]">Aight Cafe</span> · All orders for pickup only
+            <span className="font-bold text-[#221611]">Aight Cafe</span> · The Courtyard · All orders for pickup only
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/queue" className="hover:text-[#221611] transition-colors underline-offset-2 hover:underline">
-              Public Stall Queue
+            <Link to="/account/orders" className="hover:text-[#221611] transition-colors underline-offset-2 hover:underline">
+              My orders
             </Link>
-            <Link to="/staff/login" className="hover:text-[#221611] transition-colors underline-offset-2 hover:underline">
-              Staff Portal
+            <Link to="/login" className="hover:text-[#221611] transition-colors underline-offset-2 hover:underline">
+              Sign in
             </Link>
           </div>
         </footer>

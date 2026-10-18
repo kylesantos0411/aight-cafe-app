@@ -9,13 +9,13 @@ export const StaffOrdersView: React.FC = () => {
 
   useEffect(() => {
     if (!isStaffLoggedIn) {
-      navigate('/staff/login');
+      navigate('/admin/login');
     }
   }, [isStaffLoggedIn, navigate]);
 
   const handleSignOut = async () => {
     await logoutStaff();
-    navigate('/staff/login');
+    navigate('/admin/login');
   };
 
   const handleOpenQueueDisplay = () => {
@@ -28,21 +28,15 @@ export const StaffOrdersView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-start p-3 sm:p-6 font-sans">
-      <div className="w-full flex justify-between items-center max-w-7xl pb-3 text-xs font-semibold text-[#7A695C]">
+      <div className="w-full flex justify-end items-center max-w-7xl pb-3 text-xs font-semibold text-[#7A695C]">
         <button
-          onClick={() => navigate('/')}
-          className="px-3 py-1.5 bg-white border border-[#DFD6CC] text-[#221611] rounded-xl hover:bg-[#F2EDE4] transition-colors shadow-2xs"
+          onClick={handleOpenQueueDisplay}
+          className="px-3 py-1.5 bg-white border border-[#DFD6CC] text-[#221611] rounded-xl hover:bg-[#F2EDE4] transition-colors shadow-2xs cursor-pointer flex items-center gap-1.5"
         >
-          ← Return to Customer App
+          <span>📺</span>
+          <span>Open Stall TV Screen</span>
+          <span className="text-[10px]">↗</span>
         </button>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/queue')}
-            className="px-3 py-1.5 bg-white border border-[#DFD6CC] text-[#221611] rounded-xl hover:bg-[#F2EDE4] transition-colors shadow-2xs"
-          >
-            📺 Open Stall TV Screen
-          </button>
-        </div>
       </div>
 
       <div className="w-full max-w-7xl">
@@ -54,3 +48,5 @@ export const StaffOrdersView: React.FC = () => {
     </div>
   );
 };
+
+export { StaffOrdersView as AdminOrdersView };

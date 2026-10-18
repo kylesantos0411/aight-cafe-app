@@ -51,6 +51,8 @@ interface CafeContextType {
 
   // Staff State
   isStaffLoggedIn: boolean;
+  staffUser: import('../types/cafe').StaffUser | null;
+  isStaffAuthChecking: boolean;
   loginStaff: (emailOrPass: string, pass?: string) => Promise<boolean>;
   logoutStaff: () => Promise<void>;
 
@@ -73,7 +75,9 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [customerScreen, setCustomerScreen] = useState<CustomerScreenMode>('menu');
   const [isMobileFrame, setIsMobileFrame] = useState<boolean>(true);
   const [menuItems] = useState<MenuItem[]>(INITIAL_MENU_ITEMS);
-  const [isStaffLoggedIn, setIsStaffLoggedIn] = useState<boolean>(true);
+  const [isStaffLoggedIn, setIsStaffLoggedIn] = useState<boolean>(false);
+  const [staffUser, setStaffUser] = useState<import('../types/cafe').StaffUser | null>(null);
+  const [isStaffAuthChecking, setIsStaffAuthChecking] = useState<boolean>(true);
   const [isOffline, setIsOffline] = useState<boolean>(
     typeof navigator !== 'undefined' ? !navigator.onLine : false
   );
@@ -118,6 +122,19 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       console.warn('Failed to load orders', err);
     }
+  }, []);
+
+  // Verify staff session on app launch
+  useEffect(() => {
+    authService.getStaffSession().then(staff => {
+      setStaffUser(staff);
+      setIsStaffLoggedIn(!!staff);
+      setIsStaffAuthChecking(false);
+    }).catch(() => {
+      setStaffUser(null);
+      setIsStaffLoggedIn(false);
+      setIsStaffAuthChecking(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -282,16 +299,20 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const email = pass ? emailOrPass : 'mia@aight.cafe';
       const password = pass ? pass : emailOrPass;
-      await authService.signInStaff(email, password);
+      const user = await authService.signInStaff(email, password);
+      setStaffUser(user);
       setIsStaffLoggedIn(true);
       return true;
-    } catch {
-      return false;
+    } catch (err) {
+      setStaffUser(null);
+      setIsStaffLoggedIn(false);
+      throw err;
     }
   };
 
   const logoutStaff = async () => {
     await authService.signOutStaff();
+    setStaffUser(null);
     setIsStaffLoggedIn(false);
   };
 
@@ -336,6 +357,8 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         verifyCashPayment,
         publicQueue,
         isStaffLoggedIn,
+        staffUser,
+        isStaffAuthChecking,
         loginStaff,
         logoutStaff,
         isOffline,

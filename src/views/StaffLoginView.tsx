@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCafe } from '../context/CafeContext';
-import { authService } from '../services/authService';
 
 export const StaffLoginView: React.FC = () => {
   const navigate = useNavigate();
@@ -18,9 +17,8 @@ export const StaffLoginView: React.FC = () => {
     setError(null);
 
     try {
-      await authService.signInStaff(email, password);
-      await loginStaff(password);
-      navigate('/staff/orders');
+      await loginStaff(email, password);
+      navigate('/admin/orders', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Invalid credentials or unauthorized role.');
     } finally {

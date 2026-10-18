@@ -1,17 +1,25 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { CafeProvider } from './context/CafeContext';
 
-// Real Application Route Views
+// Customer Route Views
 import { CustomerMenuView } from './views/CustomerMenuView';
 import { CustomerCustomizeView } from './views/CustomerCustomizeView';
 import { CustomerCartView } from './views/CustomerCartView';
 import { CustomerCheckoutView } from './views/CustomerCheckoutView';
 import { CustomerOrderTrackerView } from './views/CustomerOrderTrackerView';
 import { CustomerAccountView } from './views/CustomerAccountView';
-import { StaffLoginView } from './views/StaffLoginView';
-import { StaffOrdersView } from './views/StaffOrdersView';
+import { CustomerLoginView } from './views/CustomerLoginView';
+import { CustomerRegisterView } from './views/CustomerRegisterView';
+
+// Staff / Admin Route Views & Route Guard
+import { AdminLoginView } from './views/AdminLoginView';
+import { AdminOrdersView } from './views/StaffOrdersView';
+import { AdminMenuView } from './views/AdminMenuView';
+import { AdminHistoryView } from './views/AdminHistoryView';
+import { AdminRouteGuard } from './components/auth/AdminRouteGuard';
+
+// Standalone Public Stall Queue Display (TV/Monitor)
 import { PublicQueueView } from './views/PublicQueueView';
-import { DesignReferenceView } from './views/DesignReferenceView';
 
 export default function App() {
   return (
@@ -20,26 +28,55 @@ export default function App() {
         <div className="min-h-screen bg-[#FAF8F5] flex flex-col font-sans text-[#221611]">
           <main className="flex-1 flex flex-col">
             <Routes>
-              {/* Customer Flow */}
+              {/* 1. Customer Routes */}
               <Route path="/" element={<CustomerMenuView />} />
               <Route path="/customize/:id" element={<CustomerCustomizeView />} />
               <Route path="/cart" element={<CustomerCartView />} />
               <Route path="/checkout" element={<CustomerCheckoutView />} />
               <Route path="/order/:token" element={<CustomerOrderTrackerView />} />
+              <Route path="/login" element={<CustomerLoginView />} />
+              <Route path="/register" element={<CustomerRegisterView />} />
               <Route path="/account" element={<CustomerAccountView />} />
+              <Route path="/account/orders" element={<CustomerAccountView />} />
 
-              {/* Staff Portal */}
-              <Route path="/staff/login" element={<StaffLoginView />} />
-              <Route path="/staff/orders" element={<StaffOrdersView />} />
+              {/* 2. Staff / Admin Routes (Role-Protected) */}
+              <Route path="/admin/login" element={<AdminLoginView />} />
+              <Route path="/admin" element={<Navigate to="/admin/orders" replace />} />
+              <Route
+                path="/admin/orders"
+                element={
+                  <AdminRouteGuard>
+                    <AdminOrdersView />
+                  </AdminRouteGuard>
+                }
+              />
+              <Route
+                path="/admin/menu"
+                element={
+                  <AdminRouteGuard>
+                    <AdminMenuView />
+                  </AdminRouteGuard>
+                }
+              />
+              <Route
+                path="/admin/history"
+                element={
+                  <AdminRouteGuard>
+                    <AdminHistoryView />
+                  </AdminRouteGuard>
+                }
+              />
 
-              {/* Public Stall Queue TV Display */}
+              {/* Legacy staff redirects */}
+              <Route path="/staff/login" element={<Navigate to="/admin/login" replace />} />
+              <Route path="/staff/orders" element={<Navigate to="/admin/orders" replace />} />
+              <Route path="/staff" element={<Navigate to="/admin/orders" replace />} />
+
+              {/* 3. Standalone Public Stall TV Queue Display */}
               <Route path="/queue" element={<PublicQueueView />} />
 
-              {/* Internal Design Reference */}
-              <Route path="/design-reference" element={<DesignReferenceView />} />
-
-              {/* Fallback to root */}
-              <Route path="*" element={<CustomerMenuView />} />
+              {/* Catch-all fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
         </div>
