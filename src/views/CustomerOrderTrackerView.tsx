@@ -12,6 +12,7 @@ import { Screen08Ready } from '../components/figma-screens/Screen08Ready';
 import { Screen09Completed } from '../components/figma-screens/Screen09Completed';
 import { Screen10Cancelled } from '../components/figma-screens/Screen10Cancelled';
 import { Screen11ConnectionLost } from '../components/figma-screens/Screen11ConnectionLost';
+import { OrderReceiptCard } from '../components/OrderReceiptCard';
 
 export const CustomerOrderTrackerView: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -92,13 +93,18 @@ export const CustomerOrderTrackerView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 font-sans">
-      {order.status === 'pending' && <Screen05Pending />}
-      {order.status === 'confirmed' && <Screen06Confirmed />}
-      {order.status === 'preparing' && <Screen07Preparing />}
-      {order.status === 'ready' && <Screen08Ready />}
-      {order.status === 'completed' && <Screen09Completed onBackToMenu={() => navigate('/')} />}
-      {order.status === 'cancelled' && <Screen10Cancelled onBackToMenu={() => navigate('/')} />}
+    <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 font-sans space-y-4">
+      {order.status === 'pending' && <Screen05Pending order={order} />}
+      {order.status === 'confirmed' && <Screen06Confirmed order={order} />}
+      {order.status === 'preparing' && <Screen07Preparing order={order} />}
+      {order.status === 'ready' && <Screen08Ready order={order} />}
+      {order.status === 'completed' && <Screen09Completed order={order} onBackToMenu={() => navigate('/')} />}
+      {order.status === 'cancelled' && <Screen10Cancelled order={order} onBackToMenu={() => navigate('/')} />}
+
+      {/* Authoritative Order Receipt Breakdown */}
+      <div className="w-full max-w-xl mx-auto">
+        <OrderReceiptCard order={order} />
+      </div>
     </div>
   );
 };

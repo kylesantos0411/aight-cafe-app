@@ -4,11 +4,17 @@ import { useCafe } from '../context/CafeContext';
 
 export const CustomerCheckoutView: React.FC = () => {
   const navigate = useNavigate();
-  const { cart, cartTotal, createOrder } = useCafe();
-  const [pickupName, setPickupName] = useState('Alex');
+  const { cart, cartTotal, createOrder, customerUser } = useCafe();
+  const [pickupName, setPickupName] = useState(() => customerUser?.fullName || 'Alex');
   const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (customerUser?.fullName && pickupName === 'Alex') {
+      setPickupName(customerUser.fullName);
+    }
+  }, [customerUser, pickupName]);
 
   if (cart.length === 0) {
     navigate('/cart');
@@ -29,6 +35,7 @@ export const CustomerCheckoutView: React.FC = () => {
         customerName: pickupName.trim(),
         phone: phone.trim() || undefined,
         orderType: 'takeout',
+        customerId: customerUser?.id || null,
       });
 
       // Navigate to the private unguessable order URL

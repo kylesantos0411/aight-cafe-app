@@ -41,13 +41,19 @@ interface CafeContextType {
     phone?: string;
     orderType?: 'takeout' | 'dine-in';
     notes?: string;
+    customerId?: string | null;
   }) => Promise<Order>;
   acceptOrder: (orderId: string) => Promise<Order>;
   updateOrderStatus: (orderId: string, status: OrderStatus, reason?: string) => Promise<Order>;
   verifyCashPayment: (orderId: string) => Promise<Order>;
+  refreshOrders: () => Promise<void>;
 
   // Public Queue
   publicQueue: PublicQueueItem[];
+
+  // Customer State
+  customerUser: import('../types/cafe').CustomerUser | null;
+  refreshCustomer: () => Promise<void>;
 
   // Staff State
   isStaffLoggedIn: boolean;
@@ -100,6 +106,21 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return [];
   });
 
+  const [customerUser, setCustomerUser] = useState<import('../types/cafe').CustomerUser | null>(null);
+
+  const refreshCustomer = useCallback(async () => {
+    try {
+      const user = await authService.getCustomerSession();
+      setCustomerUser(user);
+    } catch {
+      setCustomerUser(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshCustomer();
+  }, [refreshCustomer]);
+
   // Load initial orders and public queue
   const refreshOrders = useCallback(async () => {
     try {
@@ -143,6 +164,15 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshOrders();
   }, [refreshOrders]);
 
+  // Reconcile staff orders every 4s if logged in
+  useEffect(() => {
+    if (!isStaffLoggedIn) return;
+    const interval = setInterval(() => {
+      refreshOrders();
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isStaffLoggedIn, refreshOrders]);
+
   // Subscribe to realtime updates
   useEffect(() => {
     const unsubOrders = realtimeHub.subscribeToOrders((updatedOrder) => {
@@ -172,6 +202,7 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch {
         // ignore
       }
+      refreshOrders();
     });
 
     // Listen to browser online / offline events
@@ -187,7 +218,7 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [refreshOrders]);
 
   // Save cart changes
   useEffect(() => {
@@ -241,6 +272,7 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     phone?: string;
     orderType?: 'takeout' | 'dine-in';
     notes?: string;
+    customerId?: string | null;
   }): Promise<Order> => {
     const newOrder = await orderService.createOrder(
       cart.length > 0 ? cart : [
@@ -269,12 +301,14 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: details.phone,
         orderType: details.orderType,
         notes: details.notes,
+        customerId: details.customerId || customerUser?.id || null,
       },
       menuItems
     );
 
     setActiveOrder(newOrder);
     clearCart();
+    await refreshOrders();
     return newOrder;
   };
 
@@ -366,7 +400,10 @@ export const CafeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         acceptOrder,
         updateOrderStatus,
         verifyCashPayment,
+        refreshOrders,
         publicQueue,
+        customerUser,
+        refreshCustomer,
         isStaffLoggedIn,
         staffUser,
         isStaffAuthChecking,

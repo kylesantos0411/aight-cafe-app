@@ -5,13 +5,19 @@ import { Screen13StaffOrders } from '../components/figma-screens/Screen13StaffOr
 
 export const StaffOrdersView: React.FC = () => {
   const navigate = useNavigate();
-  const { isStaffLoggedIn, logoutStaff } = useCafe();
+  const { isStaffLoggedIn, logoutStaff, refreshOrders } = useCafe();
 
   useEffect(() => {
     if (!isStaffLoggedIn) {
       navigate('/admin/login');
+    } else {
+      refreshOrders();
+      const interval = setInterval(() => {
+        refreshOrders();
+      }, 4000);
+      return () => clearInterval(interval);
     }
-  }, [isStaffLoggedIn, navigate]);
+  }, [isStaffLoggedIn, navigate, refreshOrders]);
 
   const handleSignOut = async () => {
     await logoutStaff();

@@ -1,14 +1,17 @@
 import React from 'react';
 import { useCafe } from '../../context/CafeContext';
+import type { Order } from '../../types/cafe';
 
 interface Props {
+  order?: Order;
   onNext?: () => void;
 }
 
-export const Screen08Ready: React.FC<Props> = ({ onNext: _onNext }) => {
+export const Screen08Ready: React.FC<Props> = ({ order, onNext: _onNext }) => {
   const { activeOrder } = useCafe();
-  const orderCode = activeOrder?.code || 'A042';
-  const orderTotal = activeOrder?.totalAmount || 265;
+  const effectiveOrder = order || activeOrder;
+  const orderCode = effectiveOrder?.queueNumber || effectiveOrder?.code || 'A042';
+  const orderTotal = effectiveOrder?.totalAmount || 265;
 
   return (
     <div className="w-full max-w-xl mx-auto bg-[#FAF8F5] text-[#221611] rounded-3xl p-6 sm:p-8 flex flex-col shadow-xs border border-[#EAE3DA] font-sans relative select-none">

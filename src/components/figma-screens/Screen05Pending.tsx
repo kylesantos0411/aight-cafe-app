@@ -1,16 +1,19 @@
 import React, { useEffect } from 'react';
 import { useCafe } from '../../context/CafeContext';
+import type { Order } from '../../types/cafe';
 
 interface Props {
+  order?: Order;
   onSimulateAccept?: () => void;
 }
 
-export const Screen05Pending: React.FC<Props> = ({ onSimulateAccept }) => {
+export const Screen05Pending: React.FC<Props> = ({ order, onSimulateAccept }) => {
   const { activeOrder } = useCafe();
+  const effectiveOrder = order || activeOrder;
 
-  const requestRef = activeOrder?.requestReference || 'R-8F2';
-  const orderTotal = activeOrder?.totalAmount || 265;
-  const items = activeOrder?.items || [
+  const requestRef = effectiveOrder?.requestReference || 'R-8F2';
+  const orderTotal = effectiveOrder?.totalAmount || 265;
+  const items = effectiveOrder?.items || [
     {
       id: 'default_1',
       name: 'Iced oat latte',
@@ -32,10 +35,10 @@ export const Screen05Pending: React.FC<Props> = ({ onSimulateAccept }) => {
 
   // Auto-advance if staff accepted the order
   useEffect(() => {
-    if (activeOrder && activeOrder.status !== 'pending' && onSimulateAccept) {
+    if (effectiveOrder && effectiveOrder.status !== 'pending' && onSimulateAccept) {
       onSimulateAccept();
     }
-  }, [activeOrder?.status, onSimulateAccept]);
+  }, [effectiveOrder?.status, onSimulateAccept]);
 
   return (
     <div className="w-full max-w-xl mx-auto bg-[#FAF8F5] text-[#221611] rounded-3xl p-6 sm:p-8 flex flex-col shadow-xs border border-[#EAE3DA] font-sans relative select-none">

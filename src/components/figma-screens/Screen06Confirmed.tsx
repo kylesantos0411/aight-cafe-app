@@ -1,14 +1,20 @@
 import React from 'react';
 import { useCafe } from '../../context/CafeContext';
+import type { Order } from '../../types/cafe';
 
 interface Props {
+  order?: Order;
   onNext?: () => void;
 }
 
-export const Screen06Confirmed: React.FC<Props> = ({ onNext: _onNext }) => {
+export const Screen06Confirmed: React.FC<Props> = ({ order, onNext: _onNext }) => {
   const { activeOrder } = useCafe();
-  const orderCode = activeOrder?.code || 'A042';
-  const orderTotal = activeOrder?.totalAmount || 265;
+  const effectiveOrder = order || activeOrder;
+  const orderCode = effectiveOrder?.queueNumber || effectiveOrder?.code || 'A042';
+  const orderTotal = effectiveOrder?.totalAmount || 265;
+  const acceptedTime = effectiveOrder?.acceptedAt
+    ? new Date(effectiveOrder.acceptedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : 'Just now';
 
   return (
     <div className="w-full max-w-xl mx-auto bg-[#FAF8F5] text-[#221611] rounded-3xl p-6 sm:p-8 flex flex-col shadow-xs border border-[#EAE3DA] font-sans relative select-none">
@@ -49,7 +55,7 @@ export const Screen06Confirmed: React.FC<Props> = ({ onNext: _onNext }) => {
         </div>
         <div className="text-xs text-[#6E5D50] flex items-center justify-center gap-1">
           <span>✓</span>
-          <span>Accepted at 9:41 AM</span>
+          <span>Accepted at {acceptedTime}</span>
         </div>
       </div>
 

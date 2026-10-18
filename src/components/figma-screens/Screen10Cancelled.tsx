@@ -1,10 +1,18 @@
 import React from 'react';
+import { useCafe } from '../../context/CafeContext';
+import type { Order } from '../../types/cafe';
 
 interface Props {
+  order?: Order;
   onBackToMenu?: () => void;
 }
 
-export const Screen10Cancelled: React.FC<Props> = ({ onBackToMenu }) => {
+export const Screen10Cancelled: React.FC<Props> = ({ order, onBackToMenu }) => {
+  const { activeOrder } = useCafe();
+  const effectiveOrder = order || activeOrder;
+  const orderCode = effectiveOrder?.queueNumber || effectiveOrder?.requestReference || effectiveOrder?.code || 'Order';
+  const reason = effectiveOrder?.cancellationReason || 'Order voided or cancelled by store';
+
   return (
     <div className="w-full max-w-xl mx-auto bg-[#FAF8F5] text-[#221611] rounded-3xl p-6 sm:p-8 flex flex-col shadow-xs border border-[#EAE3DA] font-sans relative select-none">
       {/* Top Header */}
@@ -20,7 +28,7 @@ export const Screen10Cancelled: React.FC<Props> = ({ onBackToMenu }) => {
       <div className="mt-4 flex justify-center">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FCEBE9] text-[#C53A30] rounded-full text-[11px] font-bold">
           <span className="w-2 h-2 rounded-full bg-[#C53A30]"></span>
-          Cancelled
+          Cancelled / Voided
         </div>
       </div>
 
@@ -37,7 +45,7 @@ export const Screen10Cancelled: React.FC<Props> = ({ onBackToMenu }) => {
           We couldn't make this<br />one.
         </h1>
         <p className="text-xs text-[#7A695C] mt-2 leading-relaxed max-w-[260px] mx-auto">
-          The team cancelled your order before preparation.<br />Sorry about that.
+          The team cancelled or voided your order before completion.<br />Sorry about that.
         </p>
       </div>
 
@@ -45,10 +53,10 @@ export const Screen10Cancelled: React.FC<Props> = ({ onBackToMenu }) => {
       <div className="mt-5 p-4 bg-[#FBF2EA] rounded-2xl border border-[#F2DECE] text-xs space-y-1">
         <div className="font-bold text-[#A4532B] flex items-center gap-2">
           <span>ⓘ</span>
-          Item no longer available
+          Notice
         </div>
         <p className="text-[11px] text-[#7A5B49] leading-relaxed">
-          Our espresso machine needed a quick reset. Please ask the team about today's alternatives.
+          {reason}
         </p>
       </div>
 
@@ -56,11 +64,11 @@ export const Screen10Cancelled: React.FC<Props> = ({ onBackToMenu }) => {
       <div className="mt-4 p-4 bg-white rounded-2xl border border-[#ECE5DC] text-xs space-y-2.5 shadow-xs">
         <div className="flex justify-between items-center text-[#6E5D50]">
           <span>Order</span>
-          <span className="font-mono font-bold text-[#221611]">A037</span>
+          <span className="font-mono font-bold text-[#221611]">{orderCode}</span>
         </div>
         <div className="flex justify-between items-center text-[#6E5D50]">
-          <span>Cancelled</span>
-          <span className="font-medium text-[#221611]">Today, 9:35 AM</span>
+          <span>Status</span>
+          <span className="font-medium text-rose-700">Voided / Cancelled</span>
         </div>
 
         <div className="pt-2 border-t border-[#F2ECE3] flex justify-between items-start">

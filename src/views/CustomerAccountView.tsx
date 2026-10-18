@@ -18,8 +18,8 @@ export const CustomerAccountView: React.FC = () => {
     authService.getCustomerSession().then(async user => {
       setCustomer(user);
       if (user) {
-        const all = await orderService.getAllOrders();
-        setOrders(all.filter(o => o.customerId === user.id || o.customerName.toLowerCase() === user.fullName.toLowerCase()));
+        const custOrders = await orderService.getCustomerOrders(user.id);
+        setOrders(custOrders);
       }
     });
   }, []);
@@ -36,8 +36,8 @@ export const CustomerAccountView: React.FC = () => {
         user = await authService.signInCustomer(email, password);
       }
       setCustomer(user);
-      const all = await orderService.getAllOrders();
-      setOrders(all.filter(o => o.customerId === user.id || o.customerName.toLowerCase() === user.fullName.toLowerCase()));
+      const custOrders = await orderService.getCustomerOrders(user.id);
+      setOrders(custOrders);
     } catch (err: any) {
       setError(err.message || 'Authentication failed.');
     } finally {

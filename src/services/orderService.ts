@@ -154,6 +154,20 @@ class OrderRepository {
 
     const orders = this.getStoredOrders();
     this.saveOrders([newOrder, ...orders]);
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const existingTokens: string[] = JSON.parse(localStorage.getItem('aight_cafe_guest_order_tokens') || '[]');
+        if (!existingTokens.includes(newOrder.privateToken)) {
+          existingTokens.push(newOrder.privateToken);
+          localStorage.setItem('aight_cafe_guest_order_tokens', JSON.stringify(existingTokens));
+        }
+        localStorage.setItem('aight_cafe_active_order_token', newOrder.privateToken);
+      }
+    } catch {
+      // ignore
+    }
+
     realtimeHub.notifyOrderUpdated(newOrder);
     return newOrder;
   }
@@ -354,11 +368,106 @@ class OrderRepository {
   }
 
   /**
+   * Helper to map Supabase order records into authoritative client Order objects.
+   */
+  private mapSupabaseOrder(d: any): Order {
+    return {
+      id: d.id,
+      requestReference: d.request_reference || `R-${d.id.substring(0, 4).toUpperCase()}`,
+      code: d.pickup_number || d.request_reference || 'A001',
+      queueNumber: d.pickup_number || null,
+      privateToken: d.private_token,
+      customerId: d.customer_id,
+      customerName: d.customer_name || 'Customer',
+      phone: d.phone,
+      orderType: d.order_type || 'takeout',
+      items: (d.order_items || []).map((it: any) => ({
+        id: it.id,
+        menuItemId: it.product_id || '1',
+        name: it.product_name,
+        price: parseFloat(it.unit_price) || 0,
+        basePrice: parseFloat(it.unit_price) || 0,
+        quantity: it.quantity || 1,
+        image: '/figma-assets/iced-latte.jpg',
+        notes: it.customization_summary,
+      })),
+      subtotal: parseFloat(d.subtotal) || 0,
+      totalAmount: parseFloat(d.total_amount) || 0,
+      paymentMethod: d.payment_method || 'cash_at_pickup',
+      paymentStatus: d.payment_status || 'unpaid',
+      status: d.status || 'pending',
+      createdAt: d.created_at || new Date().toISOString(),
+      acceptedAt: d.accepted_at,
+      completedAt: d.completed_at,
+      estimatedMinutes: d.estimated_minutes || 10,
+      cancellationReason: d.cancellation_reason,
+      notes: d.notes,
+    };
+  }
+
+  /**
    * Fetch all orders placed by an authenticated customer.
+   * Also links any guest tokens saved locally to this account.
    */
   public async getCustomerOrders(customerId: string): Promise<Order[]> {
-    const all = await this.getAllOrders();
-    return all.filter(o => o.customerId === customerId);
+    const guestTokens: string[] = [];
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem('aight_cafe_guest_order_tokens');
+        if (saved) {
+          guestTokens.push(...JSON.parse(saved));
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      // Automatically link local guest tokens to this customer
+      for (const token of guestTokens) {
+        if (/^[0-9a-f-]{36}$/i.test(token) && /^[0-9a-f-]{36}$/i.test(customerId)) {
+          try {
+            await supabase.rpc('fn_link_guest_order', {
+              p_private_token: token,
+              p_customer_id: customerId,
+            });
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (
+              id,
+              product_name,
+              unit_price,
+              quantity,
+              item_total,
+              customization_summary
+            )
+          `)
+          .eq('customer_id', customerId)
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          const supabaseOrders = data.map((d: any) => this.mapSupabaseOrder(d));
+          if (supabaseOrders.length > 0) {
+            return supabaseOrders;
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase getCustomerOrders query error:', err);
+      }
+    }
+
+    // Local / cached fallback
+    const all = this.getStoredOrders();
+    return all.filter(o => o.customerId === customerId || guestTokens.includes(o.privateToken));
   }
 
   /**
@@ -382,13 +491,24 @@ class OrderRepository {
       return this.getOrderByPrivateToken(trimmed);
     }
 
-    // 2. Check stored orders by requestReference or code or queueNumber
+    // 2. Check stored orders first
+    const local = this.getStoredOrders();
+    const foundLocal = local.find(
+      o =>
+        o.privateToken === trimmed ||
+        (o.requestReference && o.requestReference.toLowerCase() === trimmed.toLowerCase()) ||
+        (o.code && o.code.toLowerCase() === trimmed.toLowerCase()) ||
+        (o.queueNumber && o.queueNumber.toLowerCase() === trimmed.toLowerCase())
+    );
+    if (foundLocal) return foundLocal;
+
+    // 3. Check remote orders
     const all = await this.getAllOrders();
     const found = all.find(
       o =>
         o.privateToken === trimmed ||
-        o.requestReference.toLowerCase() === trimmed.toLowerCase() ||
-        o.code.toLowerCase() === trimmed.toLowerCase() ||
+        (o.requestReference && o.requestReference.toLowerCase() === trimmed.toLowerCase()) ||
+        (o.code && o.code.toLowerCase() === trimmed.toLowerCase()) ||
         (o.queueNumber && o.queueNumber.toLowerCase() === trimmed.toLowerCase())
     );
     return found || null;
@@ -469,38 +589,7 @@ class OrderRepository {
           .order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
-          return data.map((d: any) => ({
-            id: d.id,
-            requestReference: d.request_reference,
-            code: d.pickup_number || d.request_reference,
-            queueNumber: d.pickup_number || null,
-            privateToken: d.private_token,
-            customerId: d.customer_id,
-            customerName: d.customer_name,
-            phone: d.phone,
-            orderType: d.order_type,
-            items: (d.order_items || []).map((it: any) => ({
-              id: it.id,
-              menuItemId: '1',
-              name: it.product_name,
-              price: parseFloat(it.unit_price),
-              basePrice: parseFloat(it.unit_price),
-              quantity: it.quantity,
-              image: '/figma-assets/iced-latte.jpg',
-              notes: it.customization_summary,
-            })),
-            subtotal: parseFloat(d.subtotal),
-            totalAmount: parseFloat(d.total_amount),
-            paymentMethod: d.payment_method,
-            paymentStatus: d.payment_status,
-            status: d.status,
-            createdAt: d.created_at,
-            acceptedAt: d.accepted_at,
-            completedAt: d.completed_at,
-            estimatedMinutes: d.estimated_minutes,
-            cancellationReason: d.cancellation_reason,
-            notes: d.notes,
-          }));
+          return data.map((d: any) => this.mapSupabaseOrder(d));
         }
       } catch (err) {
         console.warn('Supabase getAllOrders query error:', err);

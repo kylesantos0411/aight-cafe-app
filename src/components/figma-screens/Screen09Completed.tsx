@@ -1,15 +1,21 @@
 import React from 'react';
 import { useCafe } from '../../context/CafeContext';
+import type { Order } from '../../types/cafe';
 
 interface Props {
+  order?: Order;
   onBackToMenu?: () => void;
 }
 
-export const Screen09Completed: React.FC<Props> = ({ onBackToMenu }) => {
+export const Screen09Completed: React.FC<Props> = ({ order, onBackToMenu }) => {
   const { activeOrder } = useCafe();
-  const orderCode = activeOrder?.code || 'A042';
-  const customerName = activeOrder?.customerName || 'Alex';
-  const orderTotal = activeOrder?.totalAmount || 265;
+  const effectiveOrder = order || activeOrder;
+  const orderCode = effectiveOrder?.queueNumber || effectiveOrder?.code || 'A042';
+  const customerName = effectiveOrder?.customerName || 'Friend';
+  const orderTotal = effectiveOrder?.totalAmount || 265;
+  const completedTime = effectiveOrder?.completedAt
+    ? new Date(effectiveOrder.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : 'Recently';
 
   return (
     <div className="w-full max-w-xl mx-auto bg-[#FAF8F5] text-[#221611] rounded-3xl p-6 sm:p-8 flex flex-col shadow-xs border border-[#EAE3DA] font-sans relative select-none">
@@ -52,7 +58,7 @@ export const Screen09Completed: React.FC<Props> = ({ onBackToMenu }) => {
         </div>
         <div className="text-xs text-[#6E5D50] flex items-center justify-center gap-1">
           <span>✓</span>
-          <span>Collected at 9:52 AM</span>
+          <span>Collected at {completedTime}</span>
         </div>
       </div>
 
